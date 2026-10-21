@@ -30,3 +30,15 @@ If you are developing a production application, we recommend enabling type-aware
 ```
 
 See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+
+## Cube solving
+
+Cubely converts its face editor state into cubing.js 3×3×3 cubie coordinates,
+validates physical legality first, and verifies each returned standard face-turn
+sequence by replaying it against the editor state. The solver uses the
+`experimentalSolve3x3x3IgnoringCenters` API; its algorithm and performance may
+change with future cubing.js releases. A 30-second timeout reports failure, but
+the library does not expose cancellation, so timed-out worker computation may
+continue in the background. Phase 5 displays the sequence only; move playback
+is not included. The cubing.js package is licensed under MPL-2.0 OR
+GPL-3.0-or-later; review its licensing terms for your distribution.

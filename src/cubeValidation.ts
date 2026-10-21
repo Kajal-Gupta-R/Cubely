@@ -37,15 +37,15 @@ const COLOR_SET = new Set<StickerColor>([
   'orange',
   'red',
 ]);
-const FACE_ORDER: Face[] = ['U', 'R', 'F', 'D', 'L', 'B'];
+export const FACELET_FACE_ORDER: Face[] = ['U', 'R', 'F', 'D', 'L', 'B'];
 
 // Face grids are viewed directly from outside. Indices are row-major.
 // These standard facelet positions use Kociemba's U, R, F, D, L, B ordering.
-const CORNER_FACELETS = [
+export const CORNER_FACELETS = [
   [8, 9, 20], [6, 18, 38], [0, 36, 47], [2, 45, 11],
   [29, 26, 15], [27, 44, 24], [33, 53, 42], [35, 17, 51],
 ] as const;
-const EDGE_FACELETS = [
+export const EDGE_FACELETS = [
   [5, 10], [7, 19], [3, 37], [1, 46],
   [32, 16], [28, 25], [30, 43], [34, 52],
   [23, 12], [21, 41], [50, 39], [48, 14],
@@ -134,8 +134,8 @@ export function validateCube(input: unknown): ValidationResult {
   }
 
   const state = cube as CubeState;
-  const facelets = FACE_ORDER.flatMap((face) => state[face]);
-  const solvedFacelets = FACE_ORDER.flatMap((face) =>
+  const facelets = FACELET_FACE_ORDER.flatMap((face) => state[face]);
+  const solvedFacelets = FACELET_FACE_ORDER.flatMap((face) =>
     Array<string>(9).fill(CENTER_COLORS[face]),
   );
   const solvedCorners = CORNER_FACELETS.map((position) =>

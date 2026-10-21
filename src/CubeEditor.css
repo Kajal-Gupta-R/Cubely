@@ -335,6 +335,40 @@
   background: #fb71850d;
 }
 
+.solve-result {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 11px 13px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.solve-result.success {
+  color: #b7f6d0;
+  border: 1px solid #4ade8055;
+  background: #4ade800d;
+}
+
+.solve-result.error {
+  color: #ffd2d2;
+  border: 1px solid #fb718555;
+  background: #fb71850d;
+}
+
+.solve-result p {
+  margin: 0;
+  color: #f1f4ff;
+  font-family: monospace;
+}
+
+.solve-result span {
+  color: #8995ae;
+  font-size: 11px;
+}
+
 .validation-result ul {
   display: grid;
   gap: 6px;

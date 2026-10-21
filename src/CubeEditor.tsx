@@ -12,6 +12,7 @@ import {
   type StickerColor,
 } from './cubeState';
 import type { CubeMove } from './cubeStateManager';
+import type { CubeSolveResult } from './cubeSolver';
 import { validateCube, type ValidationResult } from './cubeValidation';
 import './CubeEditor.css';
 
@@ -28,6 +29,7 @@ interface CubeEditorProps {
   onClearSaved: () => void;
   saved: boolean;
   storageMessage: string | null;
+  onSolve: (cube: CubeState) => Promise<CubeSolveResult>;
 }
 
 function getProgress(cube: CubeState): number {
@@ -50,6 +52,7 @@ function CubeEditor({
   onClearSaved,
   saved,
   storageMessage,
+  onSolve,
 }: CubeEditorProps) {
   const [activeFace, setActiveFace] = useState<Face>('F');
   const [selectedColor, setSelectedColor] = useState<StickerColor | 'erase' | null>(null);
@@ -57,7 +60,28 @@ function CubeEditor({
   const [validation, setValidation] = useState<ValidationResult | null>(null);
   const [message, setMessage] = useState('');
   const [confirmReset, setConfirmReset] = useState(false);
+  const [solveRequest, setSolveRequest] = useState<{
+    cube: CubeState;
+    result: CubeSolveResult | { solving: true };
+  } | null>(null);
+  const solveResult = solveRequest?.cube === cube ? solveRequest.result : null;
   const progress = getProgress(cube);
+
+  async function findSolution() {
+    setSolveRequest({ cube, result: { solving: true } });
+    try {
+      setSolveRequest({ cube, result: await onSolve(cube) });
+    } catch (error) {
+      setSolveRequest({
+        cube,
+        result: {
+          ok: false,
+          reason: 'solver',
+          message: error instanceof Error ? error.message : 'An unknown solver error occurred.',
+        },
+      });
+    }
+  }
 
   function updateSticker(index: number) {
     if (index === 4) return;
@@ -229,7 +253,34 @@ function CubeEditor({
             <button className="editor-button primary" type="button" onClick={checkCube}>
               Check cube
             </button>
+            <button
+              className="editor-button primary"
+              type="button"
+              disabled={solveResult !== null && 'solving' in solveResult}
+              onClick={() => void findSolution()}
+            >
+              {solveResult !== null && 'solving' in solveResult ? 'Solving…' : 'Find solution'}
+            </button>
           </div>
+          {solveResult && (
+            <div className={`solve-result ${'solving' in solveResult || !solveResult.ok ? 'error' : 'success'}`} role="status" aria-live="polite">
+              {'solving' in solveResult ? (
+                <strong>Finding a verified move sequence…</strong>
+              ) : solveResult.ok ? (
+                <>
+                  <strong>
+                    {solveResult.moves.length === 0
+                      ? 'This cube is already solved.'
+                      : `Verified solution (${solveResult.moves.length} moves):`}
+                  </strong>
+                  {solveResult.moves.length > 0 && <p>{solveResult.moves.join(' ')}</p>}
+                  <span>Moves are shown in standard notation. Playback is not part of this phase.</span>
+                </>
+              ) : (
+                <strong>{solveResult.message}</strong>
+              )}
+            </div>
+          )}
           <div className="history-controls" role="group" aria-label="Cube history">
             <button className="editor-button secondary" type="button" disabled={!canUndo} onClick={undoEdit}>
               Undo

@@ -2,6 +2,7 @@
 import { lazy, Suspense, useState } from 'react';
 import './App.css';
 import CubeEditor from './CubeEditor';
+import { solveCube } from './cubeSolver';
 import { useCubeState } from './useCubeState';
 
 const CubePreview = lazy(() => import('./CubePreview'));
@@ -55,14 +56,13 @@ function App() {
           {showInfo && (
             <p className="info-note">
               Build your cube, validate its colors, and follow a verified
-              solution one move at a time. The full solver is coming in
-              subsequent development phases.
+              solution sequence. Move playback is planned for a later phase.
             </p>
           )}
           <div className="hero-stats">
             <div><strong>3 × 3</strong><span>Classic cube</span></div>
             <div><strong>6 faces</strong><span>One puzzle</span></div>
-            <div><strong>1 move</strong><span>At a time</span></div>
+            <div><strong>Verified</strong><span>Move sequence</span></div>
           </div>
         </div>
 
@@ -97,6 +97,7 @@ function App() {
         onClearSaved={cubeState.clearSavedCube}
         saved={cubeState.saved}
         storageMessage={cubeState.storageMessage}
+        onSolve={solveCube}
       />
 
       <section className="features" id="features">
@@ -117,8 +118,8 @@ function App() {
           </article>
           <article className="feature-card">
             <span className="feature-number">03 / SOLVE</span>
-            <h3>Learn each move</h3>
-            <p>Follow a genuine solving sequence with clear, beginner-friendly guidance.</p>
+            <h3>Get a verified solution</h3>
+            <p>Generate a genuine standard-notation move sequence. Playback is planned for a later phase.</p>
           </article>
         </div>
       </section>
@@ -126,7 +127,7 @@ function App() {
       <section className="how-section" id="how-it-works">
         <span className="section-kicker">YOUR JOURNEY STARTS HERE</span>
         <h2>Begin with a clear picture of your cube.</h2>
-        <p>Enter the stickers, check the cube’s legality, then follow the next stages as they arrive.</p>
+        <p>Enter the stickers, check the cube’s legality, and generate a verified solution sequence.</p>
         <a className="primary-button" href="#learn">Explore the basics ↗</a>
       </section>
 
