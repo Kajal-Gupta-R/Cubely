@@ -369,6 +369,67 @@
   font-size: 11px;
 }
 
+.solution-playback {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  margin-top: 7px;
+}
+
+.playback-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  color: #e6ecfa;
+}
+
+.playback-status span,
+.playback-note {
+  color: #8995ae;
+  font-size: 11px;
+}
+
+.playback-status code {
+  padding: 2px 6px;
+  color: #78e8ff;
+  border: 1px solid #78e8ff44;
+  border-radius: 4px;
+  background: #78e8ff0d;
+  font-size: 13px;
+}
+
+.playback-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.playback-speed {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #c1cadc;
+  font-size: 12px;
+}
+
+.playback-speed select {
+  min-height: 38px;
+  padding: 0 9px;
+  color: #f1f4ff;
+  border: 1px solid #ffffff25;
+  border-radius: 8px;
+  background: #111827;
+  font: inherit;
+}
+
+.playback-speed select:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .validation-result ul {
   display: grid;
   gap: 6px;

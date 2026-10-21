@@ -72,8 +72,10 @@ describe('solveCube', () => {
   it('solves and independently replays a legal scramble using standard face moves', async () => {
     const scramble: CubeMove[] = ['R', 'U', "F'", 'L2', 'D', "B'"];
     const cube = scramble.reduce(applyCubeMove, createSolvedCubeState());
+    const original = structuredClone(cube);
     const result = await solveCube(cube, 60_000);
 
+    expect(cube).toEqual(original);
     if (!result.ok) throw new Error(result.message);
     expect(result.ok).toBe(true);
     expect(result.moves.length).toBeGreaterThan(0);

@@ -1,4 +1,5 @@
 import { type CubeState, type Face, type Sticker } from './cubeState';
+import type { CubeMove } from './cubeStateManager';
 
 export type CubeCoordinate = readonly [x: number, y: number, z: number];
 
@@ -11,6 +12,28 @@ export interface CubeletSticker {
 export interface CubeletView {
   position: CubeCoordinate;
   stickers: CubeletSticker[];
+}
+
+export const FACE_NORMALS: Record<Face, CubeCoordinate> = {
+  U: [0, 1, 0],
+  D: [0, -1, 0],
+  F: [0, 0, 1],
+  B: [0, 0, -1],
+  L: [-1, 0, 0],
+  R: [1, 0, 0],
+};
+
+export function getCubeMoveRotation(move: CubeMove): {
+  axis: CubeCoordinate;
+  angleRadians: number;
+} {
+  const face = move[0] as Face;
+  const direction = move.endsWith("'") ? 1 : -1;
+  const quarterTurns = move.endsWith('2') ? 2 : 1;
+  return {
+    axis: FACE_NORMALS[face],
+    angleRadians: direction * quarterTurns * Math.PI / 2,
+  };
 }
 
 function faceletIndex(face: Face, position: CubeCoordinate): number {

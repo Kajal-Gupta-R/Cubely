@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { RotateCcw, RotateCw } from 'lucide-react';
 import {
@@ -8,7 +8,13 @@ import {
   type Material,
 } from 'three';
 import { COLORS, type CubeState, type Face } from './cubeState';
-import { mapCubeStateToCubelets, type CubeCoordinate } from './cube3d';
+import {
+  FACE_NORMALS,
+  getCubeMoveRotation,
+  mapCubeStateToCubelets,
+  type CubeCoordinate,
+} from './cube3d';
+import type { CubeMove } from './cubeStateManager';
 import './CubePreview.css';
 
 const STICKER_ROTATION: Record<Face, [number, number, number]> = {
@@ -19,20 +25,21 @@ const STICKER_ROTATION: Record<Face, [number, number, number]> = {
   L: [0, -Math.PI / 2, 0],
   R: [0, Math.PI / 2, 0],
 };
+export interface CubeAnimationRequest {
+  token: number;
+  move: CubeMove;
+  durationMs: number;
+}
 
-function stickerPosition(
-  position: CubeCoordinate,
-  face: Face,
-): [number, number, number] {
-  const [x, y, z] = position;
+function stickerPosition(face: Face): [number, number, number] {
   const offset = 0.482;
   switch (face) {
-    case 'U': return [x, offset, z];
-    case 'D': return [x, -offset, z];
-    case 'F': return [x, y, offset];
-    case 'B': return [x, y, -offset];
-    case 'L': return [-offset, y, z];
-    case 'R': return [offset, y, z];
+    case 'U': return [0, offset, 0];
+    case 'D': return [0, -offset, 0];
+    case 'F': return [0, 0, offset];
+    case 'B': return [0, 0, -offset];
+    case 'L': return [-offset, 0, 0];
+    case 'R': return [offset, 0, 0];
   }
 }
 
@@ -40,12 +47,23 @@ function CubeScene({
   cube,
   autoRotate,
   controlsRef,
+  animation,
+  onAnimationComplete,
 }: {
   cube: CubeState;
   autoRotate: boolean;
   controlsRef: RefObject<{ reset: () => void } | null>;
+  animation: CubeAnimationRequest | null;
+  onAnimationComplete: (token: number) => void;
 }) {
   const cubelets = useMemo(() => mapCubeStateToCubelets(cube), [cube]);
+  const pivotRef = useRef<import('three').Group>(null);
+  const activeAnimation = useRef<{
+    request: CubeAnimationRequest;
+    startedAt: number;
+    finished: boolean;
+    reducedMotion: boolean;
+  } | null>(null);
   const geometry = useMemo(() => new BoxGeometry(0.92, 0.92, 0.92), []);
   const stickerGeometry = useMemo(() => new BoxGeometry(0.78, 0.78, 0.025), []);
   const coreMaterial = useMemo(
@@ -67,37 +85,80 @@ function CubeScene({
     stickerMaterials.forEach((material: Material) => material.dispose());
   }, [coreMaterial, geometry, stickerGeometry, stickerMaterials]);
 
+  useEffect(() => {
+    if (animation) {
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      activeAnimation.current = {
+        request: animation,
+        startedAt: performance.now(),
+        finished: false,
+        reducedMotion,
+      };
+    } else {
+      activeAnimation.current = null;
+    }
+  }, [animation]);
+
+  useFrame(() => {
+    const active = activeAnimation.current;
+    const pivot = pivotRef.current;
+    if (!active || !pivot || active.finished) return;
+
+    const { move, durationMs } = active.request;
+    const { axis, angleRadians: angle } = getCubeMoveRotation(move);
+    const progress = active.reducedMotion || durationMs <= 0
+      ? 1
+      : Math.min(1, (performance.now() - active.startedAt) / durationMs);
+    pivot.rotation.set(axis[0] * angle * progress, axis[1] * angle * progress, axis[2] * angle * progress);
+
+    if (progress === 1) {
+      active.finished = true;
+      onAnimationComplete(active.request.token);
+    }
+  });
+
+  const cubeletNodes = cubelets.map(({ position, stickers }) => (
+    <group key={position.join(',')} position={position}>
+      <mesh
+        geometry={geometry}
+        material={coreMaterial}
+        castShadow
+        receiveShadow
+        dispose={null}
+      />
+      {stickers.map(({ face, index, color }) => {
+        if (color === null) return null;
+        const material = stickerMaterials.get(color);
+        if (!material) return null;
+        return (
+          <mesh
+            key={`${face}-${index}`}
+            geometry={stickerGeometry}
+            material={material}
+            position={stickerPosition(face)}
+            rotation={STICKER_ROTATION[face]}
+            dispose={null}
+          />
+        );
+      })}
+    </group>
+  ));
+  const layerFace = animation?.move[0] as Face | undefined;
+  const normal = layerFace ? FACE_NORMALS[layerFace] : null;
+  const inAnimatedLayer = (position: CubeCoordinate) => normal !== null
+    && position[0] * normal[0] + position[1] * normal[1] + position[2] * normal[2] === 1;
+
   return (
     <>
       <ambientLight intensity={1.8} />
       <directionalLight position={[5, 8, 7]} intensity={2.6} />
       <group rotation={[-0.32, -0.48, 0]}>
-        {cubelets.map(({ position, stickers }) => (
-          <group key={position.join(',')} position={position}>
-            <mesh
-              geometry={geometry}
-              material={coreMaterial}
-              castShadow
-              receiveShadow
-              dispose={null}
-            />
-            {stickers.map(({ face, index, color }) => {
-              if (color === null) return null;
-              const material = stickerMaterials.get(color);
-              if (!material) return null;
-              return (
-                <mesh
-                  key={`${face}-${index}`}
-                  geometry={stickerGeometry}
-                  material={material}
-                  position={stickerPosition(position, face)}
-                  rotation={STICKER_ROTATION[face]}
-                  dispose={null}
-                />
-              );
-            })}
+        {animation && (
+          <group ref={pivotRef}>
+            {cubeletNodes.filter((_, index) => inAnimatedLayer(cubelets[index].position))}
           </group>
-        ))}
+        )}
+        {cubeletNodes.filter((_, index) => !animation || !inAnimatedLayer(cubelets[index].position))}
       </group>
       <OrbitControls
         ref={(controls) => {
@@ -117,7 +178,15 @@ function CubeScene({
   );
 }
 
-function CubePreview({ cube }: { cube: CubeState }) {
+function CubePreview({
+  cube,
+  animation = null,
+  onAnimationComplete = () => {},
+}: {
+  cube: CubeState;
+  animation?: CubeAnimationRequest | null;
+  onAnimationComplete?: (token: number) => void;
+}) {
   const [autoRotate, setAutoRotate] = useState(false);
   const controlsRef = useRef<{ reset: () => void } | null>(null);
 
@@ -135,7 +204,13 @@ function CubePreview({ cube }: { cube: CubeState }) {
         )}
       >
         <Suspense fallback={null}>
-          <CubeScene cube={cube} autoRotate={autoRotate} controlsRef={controlsRef} />
+          <CubeScene
+            cube={cube}
+            autoRotate={autoRotate}
+            controlsRef={controlsRef}
+            animation={animation}
+            onAnimationComplete={onAnimationComplete}
+          />
         </Suspense>
       </Canvas>
 

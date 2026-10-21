@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   CENTER_COLORS,
   COLORS,
@@ -13,6 +13,7 @@ import {
 } from './cubeState';
 import type { CubeMove } from './cubeStateManager';
 import type { CubeSolveResult } from './cubeSolver';
+import SolutionPlayback from './SolutionPlayback';
 import { validateCube, type ValidationResult } from './cubeValidation';
 import './CubeEditor.css';
 
@@ -23,13 +24,15 @@ interface CubeEditorProps {
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
-  onApplyMove: (move: CubeMove) => void;
+  onApplyMove: (move: CubeMove) => CubeState;
   onSave: () => void;
   onRestore: () => void;
   onClearSaved: () => void;
   saved: boolean;
   storageMessage: string | null;
   onSolve: (cube: CubeState) => Promise<CubeSolveResult>;
+  onAnimateMove: (move: CubeMove, durationMs: number) => Promise<void>;
+  onCancelAnimation: () => void;
 }
 
 function getProgress(cube: CubeState): number {
@@ -53,6 +56,8 @@ function CubeEditor({
   saved,
   storageMessage,
   onSolve,
+  onAnimateMove,
+  onCancelAnimation,
 }: CubeEditorProps) {
   const [activeFace, setActiveFace] = useState<Face>('F');
   const [selectedColor, setSelectedColor] = useState<StickerColor | 'erase' | null>(null);
@@ -61,18 +66,29 @@ function CubeEditor({
   const [message, setMessage] = useState('');
   const [confirmReset, setConfirmReset] = useState(false);
   const [solveRequest, setSolveRequest] = useState<{
+    id: number;
     cube: CubeState;
     result: CubeSolveResult | { solving: true };
   } | null>(null);
-  const solveResult = solveRequest?.cube === cube ? solveRequest.result : null;
+  const solveId = useRef(0);
+  const solveResult = solveRequest?.result ?? null;
   const progress = getProgress(cube);
 
+  function clearSolution() {
+    solveId.current += 1;
+    setSolveRequest(null);
+  }
+
   async function findSolution() {
-    setSolveRequest({ cube, result: { solving: true } });
+    const id = ++solveId.current;
+    setSolveRequest({ id, cube, result: { solving: true } });
     try {
-      setSolveRequest({ cube, result: await onSolve(cube) });
+      const result = await onSolve(cube);
+      if (solveId.current === id) setSolveRequest({ id, cube, result });
     } catch (error) {
+      if (solveId.current !== id) return;
       setSolveRequest({
+        id,
         cube,
         result: {
           ok: false,
@@ -89,6 +105,7 @@ function CubeEditor({
       setMessage('Choose a color or the eraser before selecting a sticker.');
       return;
     }
+    clearSolution();
     onCubeChange(setSticker(
       cube,
       activeFace,
@@ -100,12 +117,14 @@ function CubeEditor({
   }
 
   function resetCurrentFace() {
+    clearSolution();
     onCubeChange(resetFace(cube, activeFace));
     setValidation(null);
     setMessage(`${FACE_LABELS[activeFace]} face cleared.`);
   }
 
   function resetAllFaces() {
+    clearSolution();
     onCubeChange(createEmptyCubeState());
     setValidation(null);
     setSelectedColor(null);
@@ -120,24 +139,28 @@ function CubeEditor({
   }
 
   function applyMove() {
+    clearSolution();
     onApplyMove(selectedMove);
     setValidation(null);
     setMessage(`${selectedMove} turn applied.`);
   }
 
   function undoEdit() {
+    clearSolution();
     onUndo();
     setValidation(null);
     setMessage('Previous cube state restored.');
   }
 
   function redoEdit() {
+    clearSolution();
     onRedo();
     setValidation(null);
     setMessage('Cube state reapplied.');
   }
 
   function restoreCube() {
+    clearSolution();
     onRestore();
     setValidation(null);
     setMessage('');
@@ -274,7 +297,18 @@ function CubeEditor({
                       : `Verified solution (${solveResult.moves.length} moves):`}
                   </strong>
                   {solveResult.moves.length > 0 && <p>{solveResult.moves.join(' ')}</p>}
-                  <span>Moves are shown in standard notation. Playback is not part of this phase.</span>
+                  {solveRequest && (
+                    <SolutionPlayback
+                      key={solveRequest.id}
+                      cube={cube}
+                      startCube={solveRequest.cube}
+                      moves={solveResult.moves}
+                      onApplyMove={onApplyMove}
+                      onAnimateMove={onAnimateMove}
+                      onCancelAnimation={onCancelAnimation}
+                    />
+                  )}
+                  <span>Moves use standard face-turn notation.</span>
                 </>
               ) : (
                 <strong>{solveResult.message}</strong>

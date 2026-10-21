@@ -1,16 +1,46 @@
 
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useCallback, useRef, useState } from 'react';
 import './App.css';
 import CubeEditor from './CubeEditor';
 import { solveCube } from './cubeSolver';
+import type { CubeMove } from './cubeStateManager';
+import type { CubeAnimationRequest } from './CubePreview';
 import { useCubeState } from './useCubeState';
 
 const CubePreview = lazy(() => import('./CubePreview'));
 
 function App() {
   const [showInfo, setShowInfo] = useState(false);
+  const [animationRequest, setAnimationRequest] = useState<CubeAnimationRequest | null>(null);
+  const animationToken = useRef(0);
+  const pendingAnimation = useRef<{ token: number; resolve: () => void; reject: (error: Error) => void } | null>(null);
   const cubeState = useCubeState();
   const { cube } = cubeState;
+
+  const animateMove = useCallback((move: CubeMove, durationMs: number) =>
+    new Promise<void>((resolve, reject) => {
+      if (pendingAnimation.current) {
+        pendingAnimation.current.reject(new Error('Another cube animation is already running.'));
+      }
+      const token = ++animationToken.current;
+      pendingAnimation.current = { token, resolve, reject };
+      setAnimationRequest({ token, move, durationMs });
+    }), []);
+
+  const completeAnimation = useCallback((token: number) => {
+    const pending = pendingAnimation.current;
+    if (!pending || pending.token !== token) return;
+    pendingAnimation.current = null;
+    setAnimationRequest(null);
+    pending.resolve();
+  }, []);
+
+  const cancelAnimation = useCallback(() => {
+    const pending = pendingAnimation.current;
+    pendingAnimation.current = null;
+    setAnimationRequest(null);
+    pending?.reject(new Error('Playback was interrupted before the move completed.'));
+  }, []);
 
   return (
     <main className="app-shell">
@@ -55,8 +85,8 @@ function App() {
           </div>
           {showInfo && (
             <p className="info-note">
-              Build your cube, validate its colors, and follow a verified
-              solution sequence. Move playback is planned for a later phase.
+              Build your cube, validate its colors, then play a verified
+              solution one animated move at a time.
             </p>
           )}
           <div className="hero-stats">
@@ -71,7 +101,11 @@ function App() {
           <div className="orbit orbit-two" />
           <div className="glow" />
           <Suspense fallback={<div className="cube-stage-loading" role="status">Loading 3D preview…</div>}>
-            <CubePreview cube={cube} />
+            <CubePreview
+              cube={cube}
+              animation={animationRequest}
+              onAnimationComplete={completeAnimation}
+            />
           </Suspense>
           <div className="floating-label label-top">
             <span className="label-dot cyan" />
@@ -98,6 +132,8 @@ function App() {
         saved={cubeState.saved}
         storageMessage={cubeState.storageMessage}
         onSolve={solveCube}
+        onAnimateMove={animateMove}
+        onCancelAnimation={cancelAnimation}
       />
 
       <section className="features" id="features">
@@ -118,8 +154,8 @@ function App() {
           </article>
           <article className="feature-card">
             <span className="feature-number">03 / SOLVE</span>
-            <h3>Get a verified solution</h3>
-            <p>Generate a genuine standard-notation move sequence. Playback is planned for a later phase.</p>
+            <h3>Play a verified solution</h3>
+            <p>Step through a genuine standard-notation sequence with animated turns on the 3D cube.</p>
           </article>
         </div>
       </section>
@@ -127,7 +163,7 @@ function App() {
       <section className="how-section" id="how-it-works">
         <span className="section-kicker">YOUR JOURNEY STARTS HERE</span>
         <h2>Begin with a clear picture of your cube.</h2>
-        <p>Enter the stickers, check the cube’s legality, and generate a verified solution sequence.</p>
+        <p>Enter the stickers, check the cube’s legality, then follow its verified animated solution.</p>
         <a className="primary-button" href="#learn">Explore the basics ↗</a>
       </section>
 

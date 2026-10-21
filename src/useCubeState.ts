@@ -57,10 +57,11 @@ export function useCubeState() {
     }
   }
 
-  function updateHistory(action: Parameters<typeof cubeHistoryReducer>[1]): void {
+  function updateHistory(action: Parameters<typeof cubeHistoryReducer>[1]): CubeState {
     const next = cubeHistoryReducer(history, action);
     dispatch(action);
     if (next !== history) persistCube(next.present);
+    return next.present;
   }
 
   function saveCurrentCube() {

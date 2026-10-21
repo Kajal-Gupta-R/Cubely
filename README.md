@@ -39,6 +39,9 @@ sequence by replaying it against the editor state. The solver uses the
 `experimentalSolve3x3x3IgnoringCenters` API; its algorithm and performance may
 change with future cubing.js releases. A 30-second timeout reports failure, but
 the library does not expose cancellation, so timed-out worker computation may
-continue in the background. Phase 5 displays the sequence only; move playback
-is not included. The cubing.js package is licensed under MPL-2.0 OR
-GPL-3.0-or-later; review its licensing terms for your distribution.
+continue in the background. Solution playback animates real 3D face turns,
+updates the shared editor cube after each completed turn, supports navigation
+and speed changes, and verifies the final cube is solved. Reduced-motion
+preferences skip tweening while still applying each actual move. The cubing.js
+package is licensed under MPL-2.0 OR GPL-3.0-or-later; review its licensing
+terms for your distribution.
