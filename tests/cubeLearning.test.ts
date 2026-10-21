@@ -22,6 +22,11 @@ describe('beginner move explanations', () => {
         const explanation = explainCubeMove(move);
         expect(explanation.notation).toBe(move);
         expect(explanation.faceName).toBe(faceName);
+        expect(explanation.turnDirection).toBe(
+          description === 'clockwise'
+            ? 'clockwise'
+            : description === 'counterclockwise' ? 'counterclockwise' : 'half-turn',
+        );
         expect(explanation.instruction.toLowerCase()).toContain(description);
       }
     },

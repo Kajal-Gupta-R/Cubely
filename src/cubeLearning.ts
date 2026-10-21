@@ -14,6 +14,7 @@ export interface MoveExplanation {
   notation: CubeMove;
   faceName: string;
   turnAmount: string;
+  turnDirection: 'clockwise' | 'counterclockwise' | 'half-turn';
   direction: string;
   instruction: string;
 }
@@ -22,6 +23,9 @@ export function explainCubeMove(move: CubeMove): MoveExplanation {
   const faceName = FACE_NAMES[move[0] as Face];
   const isHalfTurn = move.endsWith('2');
   const isCounterClockwise = move.endsWith("'");
+  const turnDirection = isHalfTurn
+    ? 'half-turn'
+    : isCounterClockwise ? 'counterclockwise' : 'clockwise';
   const turnAmount = isHalfTurn ? 'a half-turn (180°)' : 'a quarter-turn (90°)';
   const direction = isHalfTurn
     ? 'Direction does not matter for a half-turn.'
@@ -31,6 +35,7 @@ export function explainCubeMove(move: CubeMove): MoveExplanation {
     notation: move,
     faceName,
     turnAmount,
+    turnDirection,
     direction,
     instruction: `Turn the ${faceName} layer ${turnAmount}. ${direction} Keep the rest of the cube in place.`,
   };

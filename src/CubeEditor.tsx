@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { lazy, Suspense, useRef, useState } from 'react';
 import {
   CENTER_COLORS,
   COLORS,
@@ -18,6 +18,8 @@ import type { CubeSolveResult } from './cubeSolver';
 import SolutionPlayback from './SolutionPlayback';
 import { validateCube, type ValidationResult } from './cubeValidation';
 import './CubeEditor.css';
+
+const CubeScanner = lazy(() => import('./CubeScanner'));
 
 interface CubeEditorProps {
   cube: CubeState;
@@ -70,12 +72,14 @@ function CubeEditor({
   const [message, setMessage] = useState('');
   const [confirmReset, setConfirmReset] = useState(false);
   const [practiceRunning, setPracticeRunning] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [solveRequest, setSolveRequest] = useState<{
     id: number;
     cube: CubeState;
     result: CubeSolveResult | { solving: true };
   } | null>(null);
   const solveId = useRef(0);
+  const scannerTriggerRef = useRef<HTMLButtonElement>(null);
   const solveResult = solveRequest?.result ?? null;
   const progress = getProgress(cube);
   const cubeSolved = isCubeSolved(cube);
@@ -172,22 +176,24 @@ function CubeEditor({
     setMessage('');
   }
 
+  function closeScanner() {
+    setScannerOpen(false);
+    window.setTimeout(() => scannerTriggerRef.current?.focus(), 0);
+  }
+
+  function applyScannedCube(scannedCube: CubeState) {
+    clearSolution();
+    onCubeChange(scannedCube);
+    setValidation(validateCube(scannedCube));
+    setMessage('Scanned cube applied and validated.');
+    closeScanner();
+  }
+
   return (
     <section className="editor-section" id="editor" aria-labelledby="editor-title">
-      <PracticeMode
-        cube={cube}
-        onTimerRunningChange={setPracticeRunning}
-        onApplyScramble={(moves) => {
-          clearSolution();
-          const scrambledCube = onApplyScramble(moves);
-          setValidation(null);
-          setMessage('');
-          return scrambledCube;
-        }}
-      />
       <div className="editor-heading">
         <span className="section-kicker">START WITH YOUR CUBE</span>
-        <h2 id="editor-title">Enter the colors, one face at a time.</h2>
+        <h2 id="editor-title">Build your cube</h2>
         <p>
           Each face is viewed straight on from outside the cube; side-face top rows face up.
           Fill top-left to bottom-right. The U face’s top row faces back, and the D face’s top row faces front.
@@ -195,7 +201,24 @@ function CubeEditor({
         <p className="editor-sync-note">
           The preview updates live. Unentered stickers appear as dark cubelet faces.
         </p>
+        <button
+          className="editor-button secondary"
+          type="button"
+          disabled={practiceRunning}
+          ref={scannerTriggerRef}
+          onClick={() => setScannerOpen(true)}
+        >
+          Scan cube with camera
+        </button>
       </div>
+      {scannerOpen && (
+        <Suspense fallback={<div className="scanner-loading" role="status">Loading cube scanner…</div>}>
+          <CubeScanner
+            onApplyCube={applyScannedCube}
+            onClose={closeScanner}
+          />
+        </Suspense>
+      )}
 
       <div className="cube-editor">
         <div className="editor-face-column">
@@ -416,6 +439,23 @@ function CubeEditor({
           )}
         </div>
       </div>
+      <details className="practice-disclosure" id="practice-mode">
+        <summary>
+          <span>Practice mode</span>
+          <small>Generate a scramble, time a solve, and review your history</small>
+        </summary>
+        <PracticeMode
+          cube={cube}
+          onTimerRunningChange={setPracticeRunning}
+          onApplyScramble={(moves) => {
+            clearSolution();
+            const scrambledCube = onApplyScramble(moves);
+            setValidation(null);
+            setMessage('');
+            return scrambledCube;
+          }}
+        />
+      </details>
     </section>
   );
 }

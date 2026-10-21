@@ -104,3 +104,78 @@
     font-size: 10px;
   }
 }
+
+.cube-stage {
+  height: 320px;
+  touch-action: none;
+}
+
+.cube-stage:focus-visible {
+  outline-color: var(--lime);
+}
+
+.cube-control-button {
+  min-height: 44px;
+  border-color: var(--border-strong);
+  background: #101321e8;
+  color: var(--text);
+}
+
+.cube-control-button:hover,
+.cube-control-button.active {
+  color: var(--cyan);
+  border-color: #75d9e877;
+  background: #15192aee;
+}
+
+.cube-control-button:focus-visible {
+  outline-color: var(--lime);
+}
+
+.cube-hint {
+  color: var(--muted);
+}
+
+@media (max-width: 680px) {
+  .cube-stage {
+    height: 320px;
+  }
+
+  .cube-controls {
+    top: 4px;
+    width: calc(100% - 12px);
+    justify-content: center;
+    gap: 5px;
+  }
+
+  .cube-control-button {
+    min-width: 0;
+    padding: 0 7px;
+    font-size: 9px;
+  }
+
+  .cube-hint {
+    bottom: 6px;
+    width: 100%;
+    font-size: 8px;
+  }
+}
+
+@media (max-width: 370px) {
+  .cube-control-button {
+    padding: 0 5px;
+    font-size: 8px;
+  }
+}
+
+@media (min-width: 681px) {
+  .cube-stage {
+    height: 380px;
+  }
+}
+
+@media (min-width: 981px) {
+  .cube-stage {
+    height: 440px;
+  }
+}

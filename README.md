@@ -20,6 +20,12 @@ npm run build
 npm run preview
 ```
 
+For production, run `npm run build` and publish the generated `dist/` directory.
+Netlify or Vercel are suitable static hosts for this Vite application; configure
+the build command as `npm run build` and the publish/output directory as `dist`.
+Camera capture requires HTTPS in production (localhost is also accepted by
+browsers). No deployment has been performed for this change.
+
 ## Cube solving and learning
 
 Cubely converts the six-face editor state into cubing.js 3×3×3 cubie
@@ -45,6 +51,28 @@ requires a complete, physically legal state. The learning mode currently
 explains individual face turns, not broader solving algorithms or cubie
 notation.
 
+## Camera-assisted cube entry
+
+Choose **Scan cube with camera** in the editor, then explicitly start the camera
+and capture each face by its center color (white U, yellow D, green F, blue B,
+orange L, red R). Align the face with the on-screen 3×3 guide and follow the
+shown top-edge directions. Camera frames are sampled locally in the browser;
+they are not uploaded or stored. The scanner uses the six center stickers as
+per-cube color references and compares sticker samples in CIELAB color space.
+Per-sticker confidence is shown; low-confidence samples are marked and require
+explicit review before applying. The six-face overview lets you rotate captured
+grids and correct individual sticker colors. A scan is applied only after all
+six faces form a physically valid cube; applying it updates the shared editor
+state as one undoable change, so the 3D preview, persistence, and existing
+solver stay in sync.
+
+This is guided sampling, not automatic cube-boundary detection. Keep the face
+inside the guide and use the manual editor if lighting, glare, camera framing,
+or sticker shades make sampling unreliable. Camera access requires browser
+permission and a secure context (HTTPS or localhost); no camera permission is
+requested until **Start camera** is pressed. The stream stops when the scanner
+is closed or the component is removed.
+
 ## Scramble practice
 
 Practice mode generates a 25-move standard face-turn scramble with no
@@ -67,9 +95,10 @@ distribution.
 
 ## Performance and accessibility notes
 
-The 3D preview is loaded when its hero section enters the viewport; solver
-dependencies are loaded only when a solve is requested. The preview and
-solver WASM assets are intentionally separate from the initial application
+The 3D preview is loaded when its workspace panel approaches the viewport;
+the camera scanner is loaded only when opened, and solver dependencies are
+loaded only when a solve is requested. The preview and solver WASM assets are
+intentionally separate from the initial application
 bundle, but remain large downloads when those features are used. The browser
 must support WebGL for the interactive preview; a fallback message is shown
 when rendering is unavailable.

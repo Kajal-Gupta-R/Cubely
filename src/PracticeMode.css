@@ -248,3 +248,68 @@
     align-items: flex-start;
   }
 }
+
+.practice-section {
+  max-width: none;
+  margin: 0;
+  padding: 16px;
+}
+
+.practice-heading {
+  max-width: none;
+  margin: 0 0 14px;
+  text-align: left;
+}
+
+.practice-heading h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+  letter-spacing: -0.03em;
+}
+
+.practice-heading p {
+  margin: 0;
+  font-size: 12px;
+}
+
+.practice-card,
+.practice-history {
+  max-width: none;
+  padding: 15px;
+  border-color: var(--border);
+  background: #0c0f1ccc;
+}
+
+.practice-history {
+  margin-top: 12px;
+}
+
+.practice-timer {
+  border-color: #75d9e822;
+  background: #090b16a8;
+}
+
+.practice-timer output,
+.practice-stats strong,
+.practice-attempts time {
+  color: var(--cyan);
+}
+
+.practice-timer-controls .editor-button,
+.practice-scramble .editor-button {
+  min-height: 44px;
+}
+
+.practice-attempts li {
+  grid-template-columns: minmax(60px, 1fr) auto minmax(90px, 1fr) auto;
+}
+
+.practice-section button:focus-visible {
+  outline-color: var(--lime);
+}
+
+@media (max-width: 700px) {
+  .practice-section {
+    padding: 12px;
+  }
+}

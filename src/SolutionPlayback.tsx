@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState }
 import type { CubeState } from './cubeState';
 import type { CubeMove } from './cubeStateManager';
 import MoveLearning from './MoveLearning';
+import { clampExplanationIndex } from './cubeLearning';
 import {
   DEFAULT_PLAYBACK_SPEED,
   PLAYBACK_MOVE_DURATION_MS,
@@ -90,6 +91,7 @@ function SolutionPlayback({
       } else {
         dispatch({ type: 'next', totalMoves: moves.length, solved });
       }
+      setExplanationIndex(clampExplanationIndex(cursor, moves.length));
       if (cursor === moves.length && !solved) {
         setMessage('Playback reached the end, but the cube is not solved. The solution was not verified.');
       }
@@ -105,6 +107,7 @@ function SolutionPlayback({
   const stepForward = useCallback(async (automatic = false): Promise<void> => {
     const cursor = playbackState.current.cursor;
     if (cursor >= moves.length) return;
+    setExplanationIndex(clampExplanationIndex(cursor, moves.length));
     await applyAnimatedMove(moves[cursor], cursor + 1, automatic);
   }, [applyAnimatedMove, moves]);
 
@@ -143,6 +146,7 @@ function SolutionPlayback({
   const stepBackward = useCallback(async (): Promise<void> => {
     const cursor = playbackState.current.cursor;
     if (cursor <= 0) return;
+    setExplanationIndex(clampExplanationIndex(cursor - 1, moves.length));
     await onAnimateAndApply(invertCubeMove(moves[cursor - 1]), cursor - 1);
   }, [moves, onAnimateAndApply]);
 
@@ -154,6 +158,7 @@ function SolutionPlayback({
       if (!restored) return;
     }
     dispatch({ type: 'restart' });
+    setExplanationIndex(0);
     if (!areSameCube(expectedCube.current, startCube)) {
       setMessage('Restart did not restore the original cube state.');
     }
@@ -181,7 +186,7 @@ function SolutionPlayback({
               : `Applied ${playback.cursor} of ${moves.length} moves`}
         </strong>
         {currentMove && (
-          <span>Next: Move {playback.cursor + 1}, <code>{currentMove}</code></span>
+          <span>Do this next: Move {playback.cursor + 1}, <code>{currentMove}</code></span>
         )}
         {!currentMove && moves.length > 0 && playback.cursor === moves.length && (
           <span>{isCubeSolved(cube) ? 'Final state: solved' : 'Final state: not solved'}</span>
@@ -200,7 +205,10 @@ function SolutionPlayback({
           className="editor-button primary"
           type="button"
           disabled={practiceLocked || busy || interrupted || playback.status === 'playing' || playback.cursor >= moves.length}
-          onClick={() => dispatch({ type: 'play', totalMoves: moves.length })}
+          onClick={() => {
+            setExplanationIndex(clampExplanationIndex(playback.cursor, moves.length));
+            dispatch({ type: 'play', totalMoves: moves.length });
+          }}
         >
           Play
         </button>
