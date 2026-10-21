@@ -20,11 +20,11 @@ npm run build
 npm run preview
 ```
 
-For production, run `npm run build` and publish the generated `dist/` directory.
-Netlify or Vercel are suitable static hosts for this Vite application; configure
-the build command as `npm run build` and the publish/output directory as `dist`.
-Camera capture requires HTTPS in production (localhost is also accepted by
-browsers). No deployment has been performed for this change.
+The GitHub Actions workflow deploys `main` to GitHub Pages after each push.
+The build command is `npm run build` and the published output is `dist/`.
+The project site is served from `/Cubely/`; local development continues to use
+the root path. Camera capture requires HTTPS in production (localhost is also
+accepted by browsers).
 
 ## Cube solving and learning
 
