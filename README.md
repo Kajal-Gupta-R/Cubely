@@ -11,7 +11,14 @@ npm install
 npm run dev
 ```
 
-Run the checks with `npm test`, `npm run lint`, and `npm run build`.
+Run the release checks with:
+
+```sh
+npm test
+npm run lint
+npm run build
+npm run preview
+```
 
 ## Cube solving and learning
 
@@ -57,6 +64,21 @@ deleted, and clearing all history requires confirmation. Best and average
 times are computed from the saved attempts. The move-based scramble generator
 creates legal reachable states but does not promise a uniform random-state
 distribution.
+
+## Performance and accessibility notes
+
+The 3D preview is loaded when its hero section enters the viewport; solver
+dependencies are loaded only when a solve is requested. The preview and
+solver WASM assets are intentionally separate from the initial application
+bundle, but remain large downloads when those features are used. The browser
+must support WebGL for the interactive preview; a fallback message is shown
+when rendering is unavailable.
+
+The interface supports keyboard navigation, visible focus, and reduced-motion
+preferences. The 3D view can be rotated by dragging or by focusing it and using
+the arrow keys. Responsive styles cover narrow, tablet, and desktop layouts;
+the project does not currently include an automated accessibility audit or a
+multi-viewport browser test suite.
 
 The `cubing` package is licensed under MPL-2.0 OR GPL-3.0-or-later; review its
 licensing terms for your distribution.

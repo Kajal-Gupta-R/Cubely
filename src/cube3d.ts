@@ -23,6 +23,20 @@ export const FACE_NORMALS: Record<Face, CubeCoordinate> = {
   R: [1, 0, 0],
 };
 
+export function getCubeViewRotationForKey(key: string): {
+  horizontalRadians: number;
+  verticalRadians: number;
+} | null {
+  const angle = Math.PI / 12;
+  switch (key) {
+    case 'ArrowLeft': return { horizontalRadians: angle, verticalRadians: 0 };
+    case 'ArrowRight': return { horizontalRadians: -angle, verticalRadians: 0 };
+    case 'ArrowUp': return { horizontalRadians: 0, verticalRadians: angle };
+    case 'ArrowDown': return { horizontalRadians: 0, verticalRadians: -angle };
+    default: return null;
+  }
+}
+
 export function getCubeMoveRotation(move: CubeMove): {
   axis: CubeCoordinate;
   angleRadians: number;

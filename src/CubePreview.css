@@ -7,6 +7,12 @@
   cursor: grab;
 }
 
+.cube-stage:focus-visible {
+  outline: 3px solid #78e8ff;
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
 .cube-stage:active {
   cursor: grabbing;
 }
@@ -65,7 +71,9 @@
   margin: 0;
   color: #8593b2;
   font-size: 9px;
-  letter-spacing: 2px;
+  letter-spacing: 1px;
+  text-align: center;
+  white-space: nowrap;
   pointer-events: none;
   transform: translateX(-50%);
 }

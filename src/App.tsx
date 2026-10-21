@@ -1,5 +1,5 @@
 
-import { lazy, Suspense, useCallback, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import './App.css';
 import CubeEditor from './CubeEditor';
 import { solveCube } from './cubeSolver';
@@ -12,11 +12,29 @@ const CubePreview = lazy(() => import('./CubePreview'));
 function App() {
   const [showInfo, setShowInfo] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [shouldLoadCubePreview, setShouldLoadCubePreview] = useState(
+    () => typeof IntersectionObserver === 'undefined',
+  );
   const [animationRequest, setAnimationRequest] = useState<CubeAnimationRequest | null>(null);
   const animationToken = useRef(0);
+  const heroVisualRef = useRef<HTMLDivElement>(null);
   const pendingAnimation = useRef<{ token: number; resolve: () => void; reject: (error: Error) => void } | null>(null);
   const cubeState = useCubeState();
   const { cube } = cubeState;
+
+  useEffect(() => {
+    const heroVisual = heroVisualRef.current;
+    if (!heroVisual) return undefined;
+    if (typeof IntersectionObserver === 'undefined') return undefined;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      setShouldLoadCubePreview(true);
+      observer.disconnect();
+    });
+    observer.observe(heroVisual);
+    return () => observer.disconnect();
+  }, []);
 
   const animateMove = useCallback((move: CubeMove, durationMs: number) =>
     new Promise<void>((resolve, reject) => {
@@ -107,17 +125,23 @@ function App() {
           </div>
         </div>
 
-        <div className="hero-visual">
+        <div className="hero-visual" ref={heroVisualRef}>
           <div className="orbit orbit-one" />
           <div className="orbit orbit-two" />
           <div className="glow" />
-          <Suspense fallback={<div className="cube-stage-loading" role="status">Loading 3D preview…</div>}>
-            <CubePreview
-              cube={cube}
-              animation={animationRequest}
-              onAnimationComplete={completeAnimation}
-            />
-          </Suspense>
+          {shouldLoadCubePreview ? (
+            <Suspense fallback={<div className="cube-stage-loading" role="status">Loading 3D preview…</div>}>
+              <CubePreview
+                cube={cube}
+                animation={animationRequest}
+                onAnimationComplete={completeAnimation}
+              />
+            </Suspense>
+          ) : (
+            <div className="cube-stage-loading" role="status">
+              3D preview loads as it comes into view.
+            </div>
+          )}
           <div className="floating-label label-top">
             <span className="label-dot cyan" />
             3D INTERACTIVE
