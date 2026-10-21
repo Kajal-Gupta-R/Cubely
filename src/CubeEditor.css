@@ -211,6 +211,55 @@
   gap: 9px;
 }
 
+.history-controls,
+.persistence-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin-top: 10px;
+}
+
+.editor-button:disabled,
+.text-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.move-controls {
+  display: grid;
+  gap: 7px;
+  margin-top: 17px;
+}
+
+.move-controls label {
+  color: #c1cadc;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.move-controls > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.move-controls select {
+  min-width: 88px;
+  padding: 0 10px;
+  color: #f1f4ff;
+  border: 1px solid #ffffff25;
+  border-radius: 8px;
+  background: #111827;
+  font: inherit;
+}
+
+.move-controls > span {
+  color: #8995ae;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
 .editor-button {
   min-height: 42px;
   padding: 0 13px;

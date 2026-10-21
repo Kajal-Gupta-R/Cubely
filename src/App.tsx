@@ -2,13 +2,14 @@
 import { lazy, Suspense, useState } from 'react';
 import './App.css';
 import CubeEditor from './CubeEditor';
-import { createEmptyCubeState } from './cubeState';
+import { useCubeState } from './useCubeState';
 
 const CubePreview = lazy(() => import('./CubePreview'));
 
 function App() {
   const [showInfo, setShowInfo] = useState(false);
-  const [cube, setCube] = useState(createEmptyCubeState);
+  const cubeState = useCubeState();
+  const { cube } = cubeState;
 
   return (
     <main className="app-shell">
@@ -83,7 +84,20 @@ function App() {
         </div>
       </section>
 
-      <CubeEditor cube={cube} onCubeChange={setCube} />
+      <CubeEditor
+        cube={cube}
+        onCubeChange={cubeState.updateCube}
+        canUndo={cubeState.canUndo}
+        canRedo={cubeState.canRedo}
+        onUndo={cubeState.undo}
+        onRedo={cubeState.redo}
+        onApplyMove={cubeState.applyMove}
+        onSave={cubeState.saveCurrentCube}
+        onRestore={cubeState.restoreSavedCube}
+        onClearSaved={cubeState.clearSavedCube}
+        saved={cubeState.saved}
+        storageMessage={cubeState.storageMessage}
+      />
 
       <section className="features" id="features">
         <div className="section-heading">

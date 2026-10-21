@@ -11,12 +11,23 @@ import {
   type Face,
   type StickerColor,
 } from './cubeState';
+import type { CubeMove } from './cubeStateManager';
 import { validateCube, type ValidationResult } from './cubeValidation';
 import './CubeEditor.css';
 
 interface CubeEditorProps {
   cube: CubeState;
   onCubeChange: (cube: CubeState) => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  onUndo: () => void;
+  onRedo: () => void;
+  onApplyMove: (move: CubeMove) => void;
+  onSave: () => void;
+  onRestore: () => void;
+  onClearSaved: () => void;
+  saved: boolean;
+  storageMessage: string | null;
 }
 
 function getProgress(cube: CubeState): number {
@@ -26,9 +37,23 @@ function getProgress(cube: CubeState): number {
   );
 }
 
-function CubeEditor({ cube, onCubeChange }: CubeEditorProps) {
+function CubeEditor({
+  cube,
+  onCubeChange,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
+  onApplyMove,
+  onSave,
+  onRestore,
+  onClearSaved,
+  saved,
+  storageMessage,
+}: CubeEditorProps) {
   const [activeFace, setActiveFace] = useState<Face>('F');
   const [selectedColor, setSelectedColor] = useState<StickerColor | 'erase' | null>(null);
+  const [selectedMove, setSelectedMove] = useState<CubeMove>('R');
   const [validation, setValidation] = useState<ValidationResult | null>(null);
   const [message, setMessage] = useState('');
   const [confirmReset, setConfirmReset] = useState(false);
@@ -67,6 +92,30 @@ function CubeEditor({ cube, onCubeChange }: CubeEditorProps) {
   function checkCube() {
     const result = validateCube(cube);
     setValidation(result);
+    setMessage('');
+  }
+
+  function applyMove() {
+    onApplyMove(selectedMove);
+    setValidation(null);
+    setMessage(`${selectedMove} turn applied.`);
+  }
+
+  function undoEdit() {
+    onUndo();
+    setValidation(null);
+    setMessage('Previous cube state restored.');
+  }
+
+  function redoEdit() {
+    onRedo();
+    setValidation(null);
+    setMessage('Cube state reapplied.');
+  }
+
+  function restoreCube() {
+    onRestore();
+    setValidation(null);
     setMessage('');
   }
 
@@ -181,6 +230,46 @@ function CubeEditor({ cube, onCubeChange }: CubeEditorProps) {
               Check cube
             </button>
           </div>
+          <div className="history-controls" role="group" aria-label="Cube history">
+            <button className="editor-button secondary" type="button" disabled={!canUndo} onClick={undoEdit}>
+              Undo
+            </button>
+            <button className="editor-button secondary" type="button" disabled={!canRedo} onClick={redoEdit}>
+              Redo
+            </button>
+          </div>
+          <div className="move-controls">
+            <label htmlFor="cube-move">Apply a cube turn</label>
+            <div>
+              <select
+                id="cube-move"
+                value={selectedMove}
+                onChange={(event) => setSelectedMove(event.target.value as CubeMove)}
+              >
+                {FACES.flatMap((face) => [
+                  <option key={face} value={face}>{face}</option>,
+                  <option key={`${face}'`} value={`${face}'`}>{face}′</option>,
+                  <option key={`${face}2`} value={`${face}2`}>{face}2</option>,
+                ])}
+              </select>
+              <button className="editor-button secondary" type="button" onClick={applyMove}>
+                Apply turn
+              </button>
+            </div>
+            <span>Turn notation follows the standard view-from-that-face convention.</span>
+          </div>
+          <div className="persistence-controls" role="group" aria-label="Saved cube controls">
+            <button className="editor-button secondary" type="button" onClick={onSave}>
+              Save now
+            </button>
+            <button className="editor-button secondary" type="button" disabled={!saved} onClick={restoreCube}>
+              Restore saved
+            </button>
+            <button className="text-button" type="button" disabled={!saved} onClick={onClearSaved}>
+              Remove saved data
+            </button>
+          </div>
+          {storageMessage && <p className="editor-message" role="status">{storageMessage}</p>}
           {!confirmReset ? (
             <button className="text-button" type="button" onClick={() => setConfirmReset(true)}>
               Reset all faces…
