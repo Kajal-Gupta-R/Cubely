@@ -11,6 +11,7 @@ const CubePreview = lazy(() => import('./CubePreview'));
 
 function App() {
   const [showInfo, setShowInfo] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [animationRequest, setAnimationRequest] = useState<CubeAnimationRequest | null>(null);
   const animationToken = useRef(0);
   const pendingAnimation = useRef<{ token: number; resolve: () => void; reject: (error: Error) => void } | null>(null);
@@ -49,12 +50,22 @@ function App() {
           <span className="brand-icon">C</span>
           cubely<span className="brand-dot">.</span>
         </a>
-        <div className="nav-links">
-          <a href="#features">Features</a>
-          <a href="#how-it-works">How it works</a>
-          <a href="#learn">Learn</a>
+        <button
+          className="menu-toggle"
+          type="button"
+          aria-expanded={mobileMenuOpen}
+          aria-controls="primary-navigation"
+          aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          onClick={() => setMobileMenuOpen((open) => !open)}
+        >
+          {mobileMenuOpen ? 'Close' : 'Menu'}
+        </button>
+        <div id="primary-navigation" className={mobileMenuOpen ? 'nav-links open' : 'nav-links'}>
+          <a href="#features" onClick={() => setMobileMenuOpen(false)}>Features</a>
+          <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)}>How it works</a>
+          <a href="#learn" onClick={() => setMobileMenuOpen(false)}>Learn</a>
         </div>
-        <a className="nav-cta" href="#editor">Start solving ↗</a>
+        <a className="nav-cta" href="#editor" onClick={() => setMobileMenuOpen(false)}>Start solving ↗</a>
       </nav>
 
       <section className="hero" id="home">
@@ -170,6 +181,10 @@ function App() {
       <section className="learn-section" id="learn">
         <span className="section-kicker">THE LANGUAGE OF THE CUBE</span>
         <h2>Six faces. A few simple symbols.</h2>
+        <p className="notation-intro">
+          Letters name a face: R is right, L left, U top, D bottom, F front, and B back.
+          Imagine looking straight at the named face from outside the cube.
+        </p>
         <div className="notation-grid">
           {[
             ['R', 'Right face'],
@@ -185,8 +200,8 @@ function App() {
           ))}
         </div>
         <p className="notation-note">
-          An apostrophe, as in R′, means a counterclockwise quarter-turn
-          when looking directly at that face. The number 2 means a half-turn.
+          A plain letter (R) means a clockwise quarter-turn; an apostrophe (R′) means
+          counterclockwise. A 2 (R2) means a half-turn. Each move turns one outer layer.
         </p>
       </section>
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import type { CubeState } from './cubeState';
 import type { CubeMove } from './cubeStateManager';
+import MoveLearning from './MoveLearning';
 import {
   DEFAULT_PLAYBACK_SPEED,
   PLAYBACK_MOVE_DURATION_MS,
@@ -31,6 +32,7 @@ function SolutionPlayback({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [interrupted, setInterrupted] = useState(false);
+  const [explanationIndex, setExplanationIndex] = useState(0);
   const busyRef = useRef(false);
   const expectedCube = useRef(startCube);
   const playbackState = useRef(playback);
@@ -153,15 +155,23 @@ function SolutionPlayback({
             ? alreadySolved ? 'Cube is already solved.' : 'No moves are available.'
             : playback.status === 'completed'
               ? 'Solution complete — cube verified solved.'
-              : `Move ${Math.min(playback.cursor + 1, moves.length)} of ${moves.length}`}
+              : `Applied ${playback.cursor} of ${moves.length} moves`}
         </strong>
         {currentMove && (
-          <span>Next move: <code>{currentMove}</code></span>
+          <span>Next: Move {playback.cursor + 1}, <code>{currentMove}</code></span>
         )}
         {!currentMove && moves.length > 0 && playback.cursor === moves.length && (
-          <span>Final state: {isCubeSolved(cube) ? 'solved' : 'not solved'}</span>
+          <span>{isCubeSolved(cube) ? 'Final state: solved' : 'Final state: not solved'}</span>
         )}
       </div>
+      {moves.length > 0 && (
+        <progress
+          className="playback-progress"
+          value={playback.cursor}
+          max={moves.length}
+          aria-label={`${playback.cursor} of ${moves.length} solution moves applied`}
+        />
+      )}
       <div className="playback-controls">
         <button
           className="editor-button primary"
@@ -222,8 +232,14 @@ function SolutionPlayback({
         </label>
       </div>
       {message && <p className="editor-message" role="status">{message}</p>}
+      <MoveLearning
+        moves={moves}
+        appliedMoves={playback.cursor}
+        explanationIndex={explanationIndex}
+        onExplanationIndexChange={setExplanationIndex}
+      />
       <span className="playback-note">
-        Each step updates the editor and 3D cube. Playback moves can be undone with cube history.
+        Each completed step updates the editor and 3D cube. Playback moves can be undone with cube history.
       </span>
     </div>
   );

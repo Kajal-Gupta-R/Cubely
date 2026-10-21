@@ -12,6 +12,7 @@ import {
   type StickerColor,
 } from './cubeState';
 import type { CubeMove } from './cubeStateManager';
+import { isCubeSolved } from './cubePlayback';
 import type { CubeSolveResult } from './cubeSolver';
 import SolutionPlayback from './SolutionPlayback';
 import { validateCube, type ValidationResult } from './cubeValidation';
@@ -73,6 +74,7 @@ function CubeEditor({
   const solveId = useRef(0);
   const solveResult = solveRequest?.result ?? null;
   const progress = getProgress(cube);
+  const cubeSolved = isCubeSolved(cube);
 
   function clearSolution() {
     solveId.current += 1;
@@ -267,6 +269,12 @@ function CubeEditor({
             </div>
             <progress value={progress} max={48} aria-label={`${progress} of 48 non-center stickers entered`} />
             <span>Face centers are prefilled; all 48 other stickers are needed to validate.</span>
+            <span
+              className={cubeSolved ? 'solved-indicator is-solved' : 'solved-indicator'}
+              aria-live="polite"
+            >
+              {cubeSolved ? 'Cube is solved' : 'Cube is not solved'}
+            </span>
           </div>
 
           <div className="editor-actions">
@@ -286,7 +294,11 @@ function CubeEditor({
             </button>
           </div>
           {solveResult && (
-            <div className={`solve-result ${'solving' in solveResult || !solveResult.ok ? 'error' : 'success'}`} role="status" aria-live="polite">
+            <div
+              className={`solve-result ${'solving' in solveResult || !solveResult.ok ? 'error' : 'success'}`}
+              role={'solving' in solveResult || solveResult.ok ? 'status' : 'alert'}
+              aria-live="polite"
+            >
               {'solving' in solveResult ? (
                 <strong>Finding a verified move sequence…</strong>
               ) : solveResult.ok ? (
@@ -369,7 +381,11 @@ function CubeEditor({
 
           {message && <p className="editor-message" role="status">{message}</p>}
           {validation && (
-            <div className={validation.valid ? 'validation-result success' : 'validation-result error'} role="status" aria-live="polite">
+            <div
+              className={validation.valid ? 'validation-result success' : 'validation-result error'}
+              role={validation.valid ? 'status' : 'alert'}
+              aria-live="polite"
+            >
               <strong>{validation.valid ? 'This is a legal cube state.' : 'This cube needs a correction.'}</strong>
               {!validation.valid && (
                 <ul>
