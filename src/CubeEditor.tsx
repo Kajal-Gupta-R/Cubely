@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { lazy, Suspense, useRef, useState } from 'react';
 import {
   CENTER_COLORS,
   COLORS,
@@ -12,10 +12,14 @@ import {
   type StickerColor,
 } from './cubeState';
 import type { CubeMove } from './cubeStateManager';
+import { isCubeSolved } from './cubePlayback';
+import PracticeMode from './PracticeMode';
 import type { CubeSolveResult } from './cubeSolver';
 import SolutionPlayback from './SolutionPlayback';
 import { validateCube, type ValidationResult } from './cubeValidation';
 import './CubeEditor.css';
+
+const CubeScanner = lazy(() => import('./CubeScanner'));
 
 interface CubeEditorProps {
   cube: CubeState;
@@ -25,6 +29,7 @@ interface CubeEditorProps {
   onUndo: () => void;
   onRedo: () => void;
   onApplyMove: (move: CubeMove) => CubeState;
+  onApplyScramble: (moves: readonly CubeMove[]) => CubeState;
   onSave: () => void;
   onRestore: () => void;
   onClearSaved: () => void;
@@ -50,6 +55,7 @@ function CubeEditor({
   onUndo,
   onRedo,
   onApplyMove,
+  onApplyScramble,
   onSave,
   onRestore,
   onClearSaved,
@@ -65,14 +71,18 @@ function CubeEditor({
   const [validation, setValidation] = useState<ValidationResult | null>(null);
   const [message, setMessage] = useState('');
   const [confirmReset, setConfirmReset] = useState(false);
+  const [practiceRunning, setPracticeRunning] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [solveRequest, setSolveRequest] = useState<{
     id: number;
     cube: CubeState;
     result: CubeSolveResult | { solving: true };
   } | null>(null);
   const solveId = useRef(0);
+  const scannerTriggerRef = useRef<HTMLButtonElement>(null);
   const solveResult = solveRequest?.result ?? null;
   const progress = getProgress(cube);
+  const cubeSolved = isCubeSolved(cube);
 
   function clearSolution() {
     solveId.current += 1;
@@ -166,11 +176,24 @@ function CubeEditor({
     setMessage('');
   }
 
+  function closeScanner() {
+    setScannerOpen(false);
+    window.setTimeout(() => scannerTriggerRef.current?.focus(), 0);
+  }
+
+  function applyScannedCube(scannedCube: CubeState) {
+    clearSolution();
+    onCubeChange(scannedCube);
+    setValidation(validateCube(scannedCube));
+    setMessage('Scanned cube applied and validated.');
+    closeScanner();
+  }
+
   return (
     <section className="editor-section" id="editor" aria-labelledby="editor-title">
       <div className="editor-heading">
         <span className="section-kicker">START WITH YOUR CUBE</span>
-        <h2 id="editor-title">Enter the colors, one face at a time.</h2>
+        <h2 id="editor-title">Build your cube</h2>
         <p>
           Each face is viewed straight on from outside the cube; side-face top rows face up.
           Fill top-left to bottom-right. The U face’s top row faces back, and the D face’s top row faces front.
@@ -178,7 +201,24 @@ function CubeEditor({
         <p className="editor-sync-note">
           The preview updates live. Unentered stickers appear as dark cubelet faces.
         </p>
+        <button
+          className="editor-button secondary"
+          type="button"
+          disabled={practiceRunning}
+          ref={scannerTriggerRef}
+          onClick={() => setScannerOpen(true)}
+        >
+          Scan cube with camera
+        </button>
       </div>
+      {scannerOpen && (
+        <Suspense fallback={<div className="scanner-loading" role="status">Loading cube scanner…</div>}>
+          <CubeScanner
+            onApplyCube={applyScannedCube}
+            onClose={closeScanner}
+          />
+        </Suspense>
+      )}
 
       <div className="cube-editor">
         <div className="editor-face-column">
@@ -212,8 +252,10 @@ function CubeEditor({
                   key={`${activeFace}-${index}`}
                   type="button"
                   aria-label={label}
-                  title={isCenter ? 'Face centers cannot be changed' : 'Set sticker color'}
-                  disabled={isCenter}
+                  title={isCenter
+                    ? 'Face centers cannot be changed'
+                    : practiceRunning ? 'Sticker editing is paused during a timed attempt' : 'Set sticker color'}
+                  disabled={isCenter || practiceRunning}
                   style={{ backgroundColor: color ? COLORS.find((item) => item.color === color)?.hex : '#111827' }}
                   onClick={() => updateSticker(index)}
                 >
@@ -236,6 +278,7 @@ function CubeEditor({
                 type="button"
                 aria-label={`${label} sticker color`}
                 aria-pressed={selectedColor === color}
+                disabled={practiceRunning}
                 onClick={() => {
                   setSelectedColor(color);
                   setMessage('');
@@ -250,6 +293,7 @@ function CubeEditor({
               type="button"
               aria-label="Eraser"
               aria-pressed={selectedColor === 'erase'}
+              disabled={practiceRunning}
               onClick={() => {
                 setSelectedColor('erase');
                 setMessage('Eraser selected. Choose a sticker to clear it.');
@@ -267,10 +311,16 @@ function CubeEditor({
             </div>
             <progress value={progress} max={48} aria-label={`${progress} of 48 non-center stickers entered`} />
             <span>Face centers are prefilled; all 48 other stickers are needed to validate.</span>
+            <span
+              className={cubeSolved ? 'solved-indicator is-solved' : 'solved-indicator'}
+              aria-live="polite"
+            >
+              {cubeSolved ? 'Cube is solved' : 'Cube is not solved'}
+            </span>
           </div>
 
           <div className="editor-actions">
-            <button className="editor-button secondary" type="button" onClick={resetCurrentFace}>
+            <button className="editor-button secondary" type="button" disabled={practiceRunning} onClick={resetCurrentFace}>
               Reset {FACE_LABELS[activeFace]} face
             </button>
             <button className="editor-button primary" type="button" onClick={checkCube}>
@@ -279,14 +329,18 @@ function CubeEditor({
             <button
               className="editor-button primary"
               type="button"
-              disabled={solveResult !== null && 'solving' in solveResult}
+              disabled={practiceRunning || (solveResult !== null && 'solving' in solveResult)}
               onClick={() => void findSolution()}
             >
               {solveResult !== null && 'solving' in solveResult ? 'Solving…' : 'Find solution'}
             </button>
           </div>
           {solveResult && (
-            <div className={`solve-result ${'solving' in solveResult || !solveResult.ok ? 'error' : 'success'}`} role="status" aria-live="polite">
+            <div
+              className={`solve-result ${'solving' in solveResult || !solveResult.ok ? 'error' : 'success'}`}
+              role={'solving' in solveResult || solveResult.ok ? 'status' : 'alert'}
+              aria-live="polite"
+            >
               {'solving' in solveResult ? (
                 <strong>Finding a verified move sequence…</strong>
               ) : solveResult.ok ? (
@@ -306,6 +360,7 @@ function CubeEditor({
                       onApplyMove={onApplyMove}
                       onAnimateMove={onAnimateMove}
                       onCancelAnimation={onCancelAnimation}
+                      practiceLocked={practiceRunning}
                     />
                   )}
                   <span>Moves use standard face-turn notation.</span>
@@ -316,10 +371,10 @@ function CubeEditor({
             </div>
           )}
           <div className="history-controls" role="group" aria-label="Cube history">
-            <button className="editor-button secondary" type="button" disabled={!canUndo} onClick={undoEdit}>
+            <button className="editor-button secondary" type="button" disabled={practiceRunning || !canUndo} onClick={undoEdit}>
               Undo
             </button>
-            <button className="editor-button secondary" type="button" disabled={!canRedo} onClick={redoEdit}>
+            <button className="editor-button secondary" type="button" disabled={practiceRunning || !canRedo} onClick={redoEdit}>
               Redo
             </button>
           </div>
@@ -347,29 +402,33 @@ function CubeEditor({
             <button className="editor-button secondary" type="button" onClick={onSave}>
               Save now
             </button>
-            <button className="editor-button secondary" type="button" disabled={!saved} onClick={restoreCube}>
+            <button className="editor-button secondary" type="button" disabled={practiceRunning || !saved} onClick={restoreCube}>
               Restore saved
             </button>
-            <button className="text-button" type="button" disabled={!saved} onClick={onClearSaved}>
+            <button className="text-button" type="button" disabled={practiceRunning || !saved} onClick={onClearSaved}>
               Remove saved data
             </button>
           </div>
           {storageMessage && <p className="editor-message" role="status">{storageMessage}</p>}
           {!confirmReset ? (
-            <button className="text-button" type="button" onClick={() => setConfirmReset(true)}>
+            <button className="text-button" type="button" disabled={practiceRunning} onClick={() => setConfirmReset(true)}>
               Reset all faces…
             </button>
           ) : (
             <div className="reset-confirmation" role="group" aria-label="Confirm reset">
               <span>Clear every entered sticker?</span>
-              <button type="button" onClick={resetAllFaces}>Clear cube</button>
-              <button type="button" onClick={() => setConfirmReset(false)}>Cancel</button>
+              <button type="button" disabled={practiceRunning} onClick={resetAllFaces}>Clear cube</button>
+              <button type="button" disabled={practiceRunning} onClick={() => setConfirmReset(false)}>Cancel</button>
             </div>
           )}
 
           {message && <p className="editor-message" role="status">{message}</p>}
           {validation && (
-            <div className={validation.valid ? 'validation-result success' : 'validation-result error'} role="status" aria-live="polite">
+            <div
+              className={validation.valid ? 'validation-result success' : 'validation-result error'}
+              role={validation.valid ? 'status' : 'alert'}
+              aria-live="polite"
+            >
               <strong>{validation.valid ? 'This is a legal cube state.' : 'This cube needs a correction.'}</strong>
               {!validation.valid && (
                 <ul>
@@ -380,6 +439,23 @@ function CubeEditor({
           )}
         </div>
       </div>
+      <details className="practice-disclosure" id="practice-mode">
+        <summary>
+          <span>Practice mode</span>
+          <small>Generate a scramble, time a solve, and review your history</small>
+        </summary>
+        <PracticeMode
+          cube={cube}
+          onTimerRunningChange={setPracticeRunning}
+          onApplyScramble={(moves) => {
+            clearSolution();
+            const scrambledCube = onApplyScramble(moves);
+            setValidation(null);
+            setMessage('');
+            return scrambledCube;
+          }}
+        />
+      </details>
     </section>
   );
 }

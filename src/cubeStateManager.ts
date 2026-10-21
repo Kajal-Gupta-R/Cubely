@@ -2,6 +2,7 @@ import {
   CENTER_COLORS,
   FACES,
   createEmptyCubeState,
+  createSolvedCubeState,
   type CubeState,
   type Face,
 } from './cubeState';
@@ -17,6 +18,7 @@ export interface CubeHistoryState {
 export type CubeHistoryAction =
   | { type: 'replace'; cube: CubeState }
   | { type: 'move'; move: CubeMove }
+  | { type: 'scramble'; moves: readonly CubeMove[] }
   | { type: 'undo' }
   | { type: 'redo' }
   | { type: 'restore'; cube: CubeState };
@@ -167,6 +169,16 @@ export function cubeHistoryReducer(
       const present = action.type === 'replace'
         ? action.cube
         : applyCubeMove(state.present, action.move);
+      if (areCubeStatesEqual(state.present, present)) return state;
+      return {
+        past: [...state.past, state.present].slice(-HISTORY_LIMIT),
+        present,
+        future: [],
+      };
+    }
+    case 'scramble': {
+      if (action.moves.length === 0) return state;
+      const present = action.moves.reduce(applyCubeMove, createSolvedCubeState());
       if (areCubeStatesEqual(state.present, present)) return state;
       return {
         past: [...state.past, state.present].slice(-HISTORY_LIMIT),

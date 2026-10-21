@@ -104,6 +104,7 @@ export function useCubeState() {
     redo: () => updateHistory({ type: 'redo' }),
     updateCube: (cube: CubeState) => updateHistory({ type: 'replace', cube }),
     applyMove: (move: CubeMove) => updateHistory({ type: 'move', move }),
+    applyScramble: (moves: readonly CubeMove[]) => updateHistory({ type: 'scramble', moves }),
     saveCurrentCube,
     restoreSavedCube,
     clearSavedCube,

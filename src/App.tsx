@@ -1,5 +1,4 @@
-
-import { lazy, Suspense, useCallback, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import './App.css';
 import CubeEditor from './CubeEditor';
 import { solveCube } from './cubeSolver';
@@ -10,12 +9,29 @@ import { useCubeState } from './useCubeState';
 const CubePreview = lazy(() => import('./CubePreview'));
 
 function App() {
-  const [showInfo, setShowInfo] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [shouldLoadCubePreview, setShouldLoadCubePreview] = useState(
+    () => typeof IntersectionObserver === 'undefined',
+  );
   const [animationRequest, setAnimationRequest] = useState<CubeAnimationRequest | null>(null);
   const animationToken = useRef(0);
+  const previewRef = useRef<HTMLDivElement>(null);
   const pendingAnimation = useRef<{ token: number; resolve: () => void; reject: (error: Error) => void } | null>(null);
   const cubeState = useCubeState();
   const { cube } = cubeState;
+
+  useEffect(() => {
+    const preview = previewRef.current;
+    if (!preview || typeof IntersectionObserver === 'undefined') return undefined;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      setShouldLoadCubePreview(true);
+      observer.disconnect();
+    }, { rootMargin: '160px' });
+    observer.observe(preview);
+    return () => observer.disconnect();
+  }, []);
 
   const animateMove = useCallback((move: CubeMove, durationMs: number) =>
     new Promise<void>((resolve, reject) => {
@@ -24,6 +40,7 @@ function App() {
       }
       const token = ++animationToken.current;
       pendingAnimation.current = { token, resolve, reject };
+      setShouldLoadCubePreview(true);
       setAnimationRequest({ token, move, durationMs });
     }), []);
 
@@ -42,163 +59,150 @@ function App() {
     pending?.reject(new Error('Playback was interrupted before the move completed.'));
   }, []);
 
+  function closeMobileMenu() {
+    setMobileMenuOpen(false);
+  }
+
   return (
-    <main className="app-shell">
-      <nav className="navbar">
-        <a className="brand" href="#home">
-          <span className="brand-icon">C</span>
-          cubely<span className="brand-dot">.</span>
+    <div className="app-shell">
+      <header className="site-header">
+        <a className="brand" href="#workspace" aria-label="Cubely home">
+          <span className="brand-mark" aria-hidden="true"><span /></span>
+          <span>cubely<span className="brand-period">.</span></span>
         </a>
-        <div className="nav-links">
-          <a href="#features">Features</a>
-          <a href="#how-it-works">How it works</a>
-          <a href="#learn">Learn</a>
-        </div>
-        <a className="nav-cta" href="#editor">Start solving ↗</a>
-      </nav>
+        <button
+          className="menu-toggle"
+          type="button"
+          aria-expanded={mobileMenuOpen}
+          aria-controls="primary-navigation"
+          aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          onClick={() => setMobileMenuOpen((open) => !open)}
+        >
+          <span>{mobileMenuOpen ? 'Close' : 'Menu'}</span>
+          <span aria-hidden="true">{mobileMenuOpen ? '×' : '☰'}</span>
+        </button>
+        <nav
+          id="primary-navigation"
+          className={mobileMenuOpen ? 'primary-navigation is-open' : 'primary-navigation'}
+          aria-label="Main navigation"
+        >
+          <a href="#workspace" onClick={closeMobileMenu}>Workspace</a>
+          <a href="#practice-mode" onClick={closeMobileMenu}>Practice</a>
+          <a href="#learn" onClick={closeMobileMenu}>Learn</a>
+        </nav>
+        <a className="header-action" href="#editor" onClick={closeMobileMenu}>
+          Enter stickers <span aria-hidden="true">↘</span>
+        </a>
+      </header>
 
-      <section className="hero" id="home">
-        <div className="hero-copy">
-          <div className="eyebrow">
-            <span className="status-dot" />
-            YOUR PERSONAL CUBE COMPANION
-          </div>
-          <h1>
-            Every twist
-            <br />
-            brings you <span>closer.</span>
-          </h1>
-          <p className="hero-description">
-            Meet your new cube-solving companion. Rotate your cube in 3D,
-            enter the stickers below, and build toward a satisfying solution.
-          </p>
-          <div className="hero-actions">
-            <a className="primary-button" href="#editor">
-              Solve my cube <span>↗</span>
-            </a>
-            <button
-              className="secondary-button"
-              onClick={() => setShowInfo(!showInfo)}
-            >
-              {showInfo ? 'Hide details −' : 'Discover Cubely +'}
-            </button>
-          </div>
-          {showInfo && (
-            <p className="info-note">
-              Build your cube, validate its colors, then play a verified
-              solution one animated move at a time.
-            </p>
-          )}
-          <div className="hero-stats">
-            <div><strong>3 × 3</strong><span>Classic cube</span></div>
-            <div><strong>6 faces</strong><span>One puzzle</span></div>
-            <div><strong>Verified</strong><span>Move sequence</span></div>
-          </div>
-        </div>
-
-        <div className="hero-visual">
-          <div className="orbit orbit-one" />
-          <div className="orbit orbit-two" />
-          <div className="glow" />
-          <Suspense fallback={<div className="cube-stage-loading" role="status">Loading 3D preview…</div>}>
-            <CubePreview
-              cube={cube}
-              animation={animationRequest}
-              onAnimationComplete={completeAnimation}
-            />
-          </Suspense>
-          <div className="floating-label label-top">
-            <span className="label-dot cyan" />
-            3D INTERACTIVE
-          </div>
-          <div className="floating-label label-bottom">
-            <span className="label-dot purple" />
-            YOUR NEXT CHALLENGE
-          </div>
-        </div>
-      </section>
-
-      <CubeEditor
-        cube={cube}
-        onCubeChange={cubeState.updateCube}
-        canUndo={cubeState.canUndo}
-        canRedo={cubeState.canRedo}
-        onUndo={cubeState.undo}
-        onRedo={cubeState.redo}
-        onApplyMove={cubeState.applyMove}
-        onSave={cubeState.saveCurrentCube}
-        onRestore={cubeState.restoreSavedCube}
-        onClearSaved={cubeState.clearSavedCube}
-        saved={cubeState.saved}
-        storageMessage={cubeState.storageMessage}
-        onSolve={solveCube}
-        onAnimateMove={animateMove}
-        onCancelAnimation={cancelAnimation}
-      />
-
-      <section className="features" id="features">
-        <div className="section-heading">
-          <span>THE CUBELY EXPERIENCE</span>
-          <h2>Scramble less. Understand more.</h2>
-        </div>
-        <div className="feature-grid">
-          <article className="feature-card">
-            <span className="feature-number">01 / EXPLORE</span>
-            <h3>See every angle</h3>
-            <p>Explore a dimensional cube and get familiar with its six faces.</p>
-          </article>
-          <article className="feature-card">
-            <span className="feature-number">02 / BUILD</span>
-            <h3>Enter your colors</h3>
-            <p>Enter all six faces and check whether the arrangement is physically possible.</p>
-          </article>
-          <article className="feature-card">
-            <span className="feature-number">03 / SOLVE</span>
-            <h3>Play a verified solution</h3>
-            <p>Step through a genuine standard-notation sequence with animated turns on the 3D cube.</p>
-          </article>
-        </div>
-      </section>
-
-      <section className="how-section" id="how-it-works">
-        <span className="section-kicker">YOUR JOURNEY STARTS HERE</span>
-        <h2>Begin with a clear picture of your cube.</h2>
-        <p>Enter the stickers, check the cube’s legality, then follow its verified animated solution.</p>
-        <a className="primary-button" href="#learn">Explore the basics ↗</a>
-      </section>
-
-      <section className="learn-section" id="learn">
-        <span className="section-kicker">THE LANGUAGE OF THE CUBE</span>
-        <h2>Six faces. A few simple symbols.</h2>
-        <div className="notation-grid">
-          {[
-            ['R', 'Right face'],
-            ['L', 'Left face'],
-            ['U', 'Upper face'],
-            ['D', 'Down face'],
-            ['F', 'Front face'],
-            ['B', 'Back face'],
-          ].map(([move, label]) => (
-            <div className="notation-card" key={move}>
-              <strong>{move}</strong><span>{label}</span>
+      <main>
+        <section className="workspace" id="workspace" aria-labelledby="workspace-title">
+          <div className="workspace-heading">
+            <div>
+              <p className="section-kicker"><span className="live-indicator" />YOUR CUBE WORKSPACE</p>
+              <h1 id="workspace-title">From scramble to solution.</h1>
+              <p className="workspace-intro">
+                Scan your cube or enter its stickers, check that the state is legal, then follow a verified solve.
+              </p>
             </div>
-          ))}
-        </div>
-        <p className="notation-note">
-          An apostrophe, as in R′, means a counterclockwise quarter-turn
-          when looking directly at that face. The number 2 means a half-turn.
-        </p>
-      </section>
+            <div className="privacy-pill">
+              <span aria-hidden="true">◈</span>
+              <span>Cube data stays in this browser</span>
+            </div>
+          </div>
 
-      <footer className="footer">
-        <a className="brand" href="#home">
-          <span className="brand-icon">C</span>
-          cubely<span className="brand-dot">.</span>
+          <div className="workspace-grid">
+            <section className="preview-panel" aria-labelledby="preview-title">
+              <div className="panel-heading">
+                <div>
+                  <p className="section-kicker">LIVE MODEL</p>
+                  <h2 id="preview-title">Your cube</h2>
+                </div>
+                <span className="sync-badge"><span />Synced</span>
+              </div>
+              <div className="preview-stage" ref={previewRef}>
+                {shouldLoadCubePreview ? (
+                  <Suspense fallback={<div className="cube-stage-loading" role="status">Loading 3D preview…</div>}>
+                    <CubePreview
+                      cube={cube}
+                      animation={animationRequest}
+                      onAnimationComplete={completeAnimation}
+                    />
+                  </Suspense>
+                ) : (
+                  <div className="cube-stage-loading" role="status">
+                    The interactive model loads as it comes into view.
+                  </div>
+                )}
+              </div>
+              <div className="preview-caption">
+                <span>Drag to orbit</span>
+                <span className="caption-divider" />
+                <span>Arrow keys to rotate</span>
+              </div>
+            </section>
+
+            <CubeEditor
+              cube={cube}
+              onCubeChange={cubeState.updateCube}
+              canUndo={cubeState.canUndo}
+              canRedo={cubeState.canRedo}
+              onUndo={cubeState.undo}
+              onRedo={cubeState.redo}
+              onApplyMove={cubeState.applyMove}
+              onApplyScramble={cubeState.applyScramble}
+              onSave={cubeState.saveCurrentCube}
+              onRestore={cubeState.restoreSavedCube}
+              onClearSaved={cubeState.clearSavedCube}
+              saved={cubeState.saved}
+              storageMessage={cubeState.storageMessage}
+              onSolve={solveCube}
+              onAnimateMove={animateMove}
+              onCancelAnimation={cancelAnimation}
+            />
+          </div>
+        </section>
+
+        <section className="learning-panel" id="learn" aria-labelledby="learn-title">
+          <details>
+            <summary>
+              <span className="learn-icon" aria-hidden="true">?</span>
+              <span>
+                <strong id="learn-title">Cube notation, made simple</strong>
+                <small>Quick reference for the symbols used in your solution</small>
+              </span>
+              <span className="details-indicator" aria-hidden="true">+</span>
+            </summary>
+            <div className="notation-content">
+              <p>Each letter names a face. Imagine looking straight at that face from outside the cube.</p>
+              <div className="notation-grid">
+                {[
+                  ['R', 'Right'], ['L', 'Left'], ['U', 'Up'],
+                  ['D', 'Down'], ['F', 'Front'], ['B', 'Back'],
+                ].map(([move, name]) => (
+                  <div className="notation-item" key={move}>
+                    <strong>{move}</strong><span>{name}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="notation-note">
+                A plain letter (R) turns clockwise; an apostrophe (R′) turns counterclockwise; 2 (R2) is a half-turn.
+                The solution panel explains every move in context.
+              </p>
+            </div>
+          </details>
+        </section>
+      </main>
+
+      <footer className="site-footer">
+        <a className="brand footer-brand" href="#workspace" aria-label="Cubely home">
+          <span className="brand-mark" aria-hidden="true"><span /></span>
+          <span>cubely<span className="brand-period">.</span></span>
         </a>
-        <p>Twist. Solve. Experience.</p>
-        <span>Made for curious minds.</span>
+        <p>A private, browser-based cube workspace.</p>
+        <a href="#learn">Notation guide</a>
       </footer>
-    </main>
+    </div>
   );
 }
 

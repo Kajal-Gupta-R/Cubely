@@ -1,0 +1,315 @@
+.practice-section {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 55px 36px 75px;
+}
+
+.practice-heading {
+  max-width: 750px;
+  margin: 0 auto 28px;
+  text-align: center;
+}
+
+.practice-heading h2 {
+  margin: 12px 0;
+  font-size: clamp(28px, 4vw, 40px);
+  letter-spacing: -1px;
+}
+
+.practice-heading p {
+  color: #aab5cb;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.practice-card,
+.practice-history {
+  max-width: 950px;
+  margin: auto;
+  padding: 22px;
+  border: 1px solid #ffffff14;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #151c2d, #0d111d);
+}
+
+.practice-scramble {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.practice-scramble h3,
+.practice-history h3 {
+  margin: 0 0 8px;
+  color: #f1f4ff;
+  font-size: 16px;
+}
+
+.practice-scramble p {
+  margin: 0;
+  color: #c1cadc;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+.practice-timer {
+  display: grid;
+  justify-items: center;
+  gap: 13px;
+  margin: 23px 0 12px;
+  padding: 18px;
+  border: 1px solid #78e8ff22;
+  border-radius: 10px;
+  background: #080b1488;
+}
+
+.practice-timer output {
+  color: #78e8ff;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: clamp(38px, 8vw, 56px);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.practice-timer-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 9px;
+}
+
+.practice-feedback {
+  min-height: 1.6em;
+  margin: 8px 0 0;
+  color: #aab5cb;
+  font-size: 12px;
+  text-align: center;
+}
+
+.practice-history {
+  margin-top: 18px;
+}
+
+.practice-history-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.practice-history-heading p {
+  margin: 0;
+  color: #aab5cb;
+  font-size: 12px;
+}
+
+.practice-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.practice-stats div {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid #ffffff14;
+  border-radius: 8px;
+  background: #ffffff05;
+}
+
+.practice-stats span {
+  color: #aab5cb;
+  font-size: 11px;
+}
+
+.practice-stats strong {
+  color: #78e8ff;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.practice-empty {
+  margin: 0;
+  padding: 14px 0;
+  color: #aab5cb;
+  font-size: 12px;
+}
+
+.practice-attempts {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.practice-attempts li {
+  display: grid;
+  grid-template-columns: minmax(70px, 1fr) auto minmax(120px, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0;
+  border-top: 1px solid #ffffff12;
+  color: #e6ecfa;
+  font-size: 12px;
+}
+
+.practice-attempts time {
+  color: #78e8ff;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.practice-date {
+  color: #aab5cb;
+  font-size: 11px;
+  text-align: right;
+}
+
+.practice-attempts .text-button,
+.practice-confirm .editor-button {
+  margin: 0;
+}
+
+.practice-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin: 14px 0;
+  padding: 12px;
+  border: 1px solid #ff9b9b55;
+  border-radius: 8px;
+  color: #e7ebf7;
+  background: #ff9b9b0b;
+  font-size: 12px;
+}
+
+.practice-section button:focus-visible {
+  outline: 3px solid #78e8ff;
+  outline-offset: 3px;
+}
+
+.practice-section button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+@media (max-width: 700px) {
+  .practice-section {
+    padding: 44px 20px 58px;
+  }
+
+  .practice-card,
+  .practice-history {
+    padding: 16px;
+  }
+
+  .practice-scramble {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .practice-scramble .editor-button {
+    align-self: flex-start;
+  }
+
+  .practice-attempts li {
+    grid-template-columns: 1fr auto auto;
+  }
+
+  .practice-date {
+    display: none;
+  }
+}
+
+@media (max-width: 400px) {
+  .practice-section {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .practice-timer-controls {
+    width: 100%;
+  }
+
+  .practice-timer-controls button {
+    flex: 1 1 auto;
+  }
+
+  .practice-history-heading {
+    align-items: flex-start;
+  }
+}
+
+.practice-section {
+  max-width: none;
+  margin: 0;
+  padding: 16px;
+}
+
+.practice-heading {
+  max-width: none;
+  margin: 0 0 14px;
+  text-align: left;
+}
+
+.practice-heading h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+  letter-spacing: -0.03em;
+}
+
+.practice-heading p {
+  margin: 0;
+  font-size: 12px;
+}
+
+.practice-card,
+.practice-history {
+  max-width: none;
+  padding: 15px;
+  border-color: var(--border);
+  background: #0c0f1ccc;
+}
+
+.practice-history {
+  margin-top: 12px;
+}
+
+.practice-timer {
+  border-color: #75d9e822;
+  background: #090b16a8;
+}
+
+.practice-timer output,
+.practice-stats strong,
+.practice-attempts time {
+  color: var(--cyan);
+}
+
+.practice-timer-controls .editor-button,
+.practice-scramble .editor-button {
+  min-height: 44px;
+}
+
+.practice-attempts li {
+  grid-template-columns: minmax(60px, 1fr) auto minmax(90px, 1fr) auto;
+}
+
+.practice-section button:focus-visible {
+  outline-color: var(--lime);
+}
+
+@media (max-width: 700px) {
+  .practice-section {
+    padding: 12px;
+  }
+}

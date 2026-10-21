@@ -10,6 +10,7 @@ import {
 import { COLORS, type CubeState, type Face } from './cubeState';
 import {
   FACE_NORMALS,
+  getCubeViewRotationForKey,
   getCubeMoveRotation,
   mapCubeStateToCubelets,
   type CubeCoordinate,
@@ -188,10 +189,30 @@ function CubePreview({
   onAnimationComplete?: (token: number) => void;
 }) {
   const [autoRotate, setAutoRotate] = useState(false);
-  const controlsRef = useRef<{ reset: () => void } | null>(null);
+  const controlsRef = useRef<{
+    reset: () => void;
+    rotateLeft: (angle: number) => void;
+    rotateUp: (angle: number) => void;
+    update: () => void;
+  } | null>(null);
 
   return (
-    <div className="cube-stage" role="group" aria-label="Interactive 3D cube preview">
+    <div
+      className="cube-stage"
+      role="group"
+      aria-label="Interactive 3D cube preview"
+      aria-describedby="cube-preview-hint"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return;
+        const rotation = getCubeViewRotationForKey(event.key);
+        if (!rotation) return;
+        event.preventDefault();
+        controlsRef.current?.rotateLeft(rotation.horizontalRadians);
+        controlsRef.current?.rotateUp(rotation.verticalRadians);
+        controlsRef.current?.update();
+      }}
+    >
       <Canvas
         aria-label="3D Rubik's Cube; drag to rotate"
         camera={{ position: [4.1, 3.2, 5.2], fov: 38 }}
@@ -237,7 +258,7 @@ function CubePreview({
           Auto-rotate {autoRotate ? 'on' : 'off'}
         </button>
       </div>
-      <p className="cube-hint">DRAG TO ROTATE</p>
+      <p className="cube-hint" id="cube-preview-hint">DRAG OR USE ARROW KEYS TO ROTATE</p>
     </div>
   );
 }

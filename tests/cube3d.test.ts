@@ -1,6 +1,29 @@
 import { describe, expect, it } from 'vitest';
 import { COLORS, createEmptyCubeState, setSticker, type Face } from '../src/cubeState';
-import { mapCubeStateToCubelets } from '../src/cube3d';
+import { getCubeViewRotationForKey, mapCubeStateToCubelets } from '../src/cube3d';
+
+describe('keyboard cube view rotation', () => {
+  it('maps arrow keys to incremental camera rotations', () => {
+    const angle = Math.PI / 12;
+    expect(getCubeViewRotationForKey('ArrowLeft')).toEqual({
+      horizontalRadians: angle,
+      verticalRadians: 0,
+    });
+    expect(getCubeViewRotationForKey('ArrowRight')).toEqual({
+      horizontalRadians: -angle,
+      verticalRadians: 0,
+    });
+    expect(getCubeViewRotationForKey('ArrowUp')).toEqual({
+      horizontalRadians: 0,
+      verticalRadians: angle,
+    });
+    expect(getCubeViewRotationForKey('ArrowDown')).toEqual({
+      horizontalRadians: 0,
+      verticalRadians: -angle,
+    });
+    expect(getCubeViewRotationForKey('Enter')).toBeNull();
+  });
+});
 
 function expectedPosition(face: Face, index: number): readonly [number, number, number] {
   const row = Math.floor(index / 3);
