@@ -214,7 +214,15 @@ button {
   position: relative;
   display: grid;
   place-items: center;
-  perspective: 900px;
+}
+
+.cube-stage-loading {
+  width: 100%;
+  height: 440px;
+  display: grid;
+  place-items: center;
+  color: #9ca8c1;
+  font-size: 13px;
 }
 
 .glow {
@@ -238,65 +246,6 @@ button {
   width: 300px;
   height: 300px;
   border-color: #76eaff22;
-}
-
-.cube-stage {
-  position: relative;
-  z-index: 1;
-  width: 230px;
-  height: 230px;
-  display: grid;
-  place-items: center;
-  cursor: grab;
-  touch-action: pan-y;
-}
-
-.cube-stage:active {
-  cursor: grabbing;
-}
-
-.cube {
-  position: relative;
-  width: 150px;
-  height: 150px;
-  transform-style: preserve-3d;
-  transition: transform 100ms linear;
-}
-
-.face {
-  position: absolute;
-  width: 150px;
-  height: 150px;
-  padding: 5px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-  gap: 5px;
-  border: 2px solid #080b14;
-  border-radius: 9px;
-  background: #090b11;
-  backface-visibility: visible;
-}
-
-.sticker {
-  border-radius: 5px;
-  border: 2px solid #00000022;
-  box-shadow: inset 0 0 8px #ffffff22, 0 1px 2px #00000070;
-}
-
-.front { transform: translateZ(75px); }
-.back { transform: rotateY(180deg) translateZ(75px); }
-.right { transform: rotateY(90deg) translateZ(75px); }
-.left { transform: rotateY(-90deg) translateZ(75px); }
-.top { transform: rotateX(90deg) translateZ(75px); }
-.bottom { transform: rotateX(-90deg) translateZ(75px); }
-
-.cube-hint {
-  position: absolute;
-  top: calc(100% + 24px);
-  color: #8593b2;
-  font-size: 9px;
-  letter-spacing: 2px;
 }
 
 .floating-label {
@@ -466,6 +415,10 @@ button {
 
   .hero-visual {
     min-height: 390px;
+  }
+
+  .cube-stage-loading {
+    height: 370px;
   }
 
   .hero-stats {

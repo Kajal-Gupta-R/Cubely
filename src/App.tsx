@@ -1,73 +1,14 @@
 
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import './App.css';
 import CubeEditor from './CubeEditor';
+import { createEmptyCubeState } from './cubeState';
 
-const colors = [
-  '#22c55e', '#22c55e', '#22c55e',
-  '#22c55e', '#22c55e', '#22c55e',
-  '#22c55e', '#22c55e', '#22c55e',
-];
-
-function CubePreview() {
-  const [rotation, setRotation] = useState({ x: -24, y: -32 });
-
-  return (
-    <div
-      className="cube-stage"
-      onPointerMove={(event) => {
-        if (event.buttons === 1) {
-          setRotation((previous) => ({
-            x: previous.x + event.movementY * 0.6,
-            y: previous.y + event.movementX * 0.6,
-          }));
-        }
-      }}
-    >
-      <div
-        className="cube"
-        style={{
-          transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
-        }}
-      >
-        <div className="face front">
-          {colors.map((color, i) => (
-            <div className="sticker" key={i} style={{ background: color }} />
-          ))}
-        </div>
-        <div className="face back">
-          {Array.from({ length: 9 }, (_, i) => (
-            <div className="sticker" key={i} style={{ background: '#3b82f6' }} />
-          ))}
-        </div>
-        <div className="face right">
-          {Array.from({ length: 9 }, (_, i) => (
-            <div className="sticker" key={i} style={{ background: '#ef4444' }} />
-          ))}
-        </div>
-        <div className="face left">
-          {Array.from({ length: 9 }, (_, i) => (
-            <div className="sticker" key={i} style={{ background: '#f97316' }} />
-          ))}
-        </div>
-        <div className="face top">
-          {Array.from({ length: 9 }, (_, i) => (
-            <div className="sticker" key={i} style={{ background: '#f8fafc' }} />
-          ))}
-        </div>
-        <div className="face bottom">
-          {Array.from({ length: 9 }, (_, i) => (
-            <div className="sticker" key={i} style={{ background: '#facc15' }} />
-          ))}
-        </div>
-      </div>
-      <p className="cube-hint">DRAG TO EXPLORE</p>
-    </div>
-  );
-}
+const CubePreview = lazy(() => import('./CubePreview'));
 
 function App() {
   const [showInfo, setShowInfo] = useState(false);
+  const [cube, setCube] = useState(createEmptyCubeState);
 
   return (
     <main className="app-shell">
@@ -96,8 +37,8 @@ function App() {
             brings you <span>closer.</span>
           </h1>
           <p className="hero-description">
-            Meet your new cube-solving companion. Rotate the independent cube
-            preview, enter your stickers below, and build toward a satisfying solution.
+            Meet your new cube-solving companion. Rotate your cube in 3D,
+            enter the stickers below, and build toward a satisfying solution.
           </p>
           <div className="hero-actions">
             <a className="primary-button" href="#editor">
@@ -128,7 +69,9 @@ function App() {
           <div className="orbit orbit-one" />
           <div className="orbit orbit-two" />
           <div className="glow" />
-          <CubePreview />
+          <Suspense fallback={<div className="cube-stage-loading" role="status">Loading 3D preview…</div>}>
+            <CubePreview cube={cube} />
+          </Suspense>
           <div className="floating-label label-top">
             <span className="label-dot cyan" />
             3D INTERACTIVE
@@ -140,7 +83,7 @@ function App() {
         </div>
       </section>
 
-      <CubeEditor />
+      <CubeEditor cube={cube} onCubeChange={setCube} />
 
       <section className="features" id="features">
         <div className="section-heading">

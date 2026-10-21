@@ -14,6 +14,11 @@ import {
 import { validateCube, type ValidationResult } from './cubeValidation';
 import './CubeEditor.css';
 
+interface CubeEditorProps {
+  cube: CubeState;
+  onCubeChange: (cube: CubeState) => void;
+}
+
 function getProgress(cube: CubeState): number {
   return FACES.reduce(
     (total, face) => total + cube[face].filter((sticker) => sticker !== null).length - 1,
@@ -21,8 +26,7 @@ function getProgress(cube: CubeState): number {
   );
 }
 
-function CubeEditor() {
-  const [cube, setCube] = useState<CubeState>(createEmptyCubeState);
+function CubeEditor({ cube, onCubeChange }: CubeEditorProps) {
   const [activeFace, setActiveFace] = useState<Face>('F');
   const [selectedColor, setSelectedColor] = useState<StickerColor | 'erase' | null>(null);
   const [validation, setValidation] = useState<ValidationResult | null>(null);
@@ -36,8 +40,8 @@ function CubeEditor() {
       setMessage('Choose a color or the eraser before selecting a sticker.');
       return;
     }
-    setCube((current) => setSticker(
-      current,
+    onCubeChange(setSticker(
+      cube,
       activeFace,
       index,
       selectedColor === 'erase' ? null : selectedColor,
@@ -47,13 +51,13 @@ function CubeEditor() {
   }
 
   function resetCurrentFace() {
-    setCube((current) => resetFace(current, activeFace));
+    onCubeChange(resetFace(cube, activeFace));
     setValidation(null);
     setMessage(`${FACE_LABELS[activeFace]} face cleared.`);
   }
 
   function resetAllFaces() {
-    setCube(createEmptyCubeState());
+    onCubeChange(createEmptyCubeState());
     setValidation(null);
     setSelectedColor(null);
     setConfirmReset(false);
@@ -76,7 +80,7 @@ function CubeEditor() {
           Fill top-left to bottom-right. The U face’s top row faces back, and the D face’s top row faces front.
         </p>
         <p className="editor-sync-note">
-          The entered stickers are separate from the rotating hero preview for now.
+          The preview updates live. Unentered stickers appear as dark cubelet faces.
         </p>
       </div>
 
