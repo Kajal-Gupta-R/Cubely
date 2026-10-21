@@ -114,6 +114,28 @@ describe('cube history', () => {
     expect(cubeHistoryReducer(afterReset, { type: 'redo' }).present).toEqual(reset);
   });
 
+  it('applies a scramble from solved as one undoable change and maps the same state to the preview', () => {
+    const previous = makeEditedCube();
+    const history = cubeHistoryReducer(createCubeHistory(previous), {
+      type: 'scramble',
+      moves: ['R', 'U', "F'", 'L2'],
+    });
+    const expected = ['R', 'U', "F'", 'L2'].reduce(applyCubeMove, createSolvedCubeState());
+
+    expect(history.present).toEqual(expected);
+    expect(history.past).toEqual([previous]);
+    expect(validateCube(history.present).valid).toBe(true);
+    expect(mapCubeStateToCubelets(history.present)).toHaveLength(27);
+    for (const face of ['U', 'D', 'F', 'B', 'L', 'R'] as const) {
+      for (let index = 0; index < 9; index += 1) {
+        expect(faceSticker(history.present, face, index)?.color).toBe(expected[face][index]);
+      }
+    }
+    expect(cubeHistoryReducer(history, { type: 'undo' }).present).toEqual(previous);
+    expect(cubeHistoryReducer(history, { type: 'undo' }).future).toEqual([expected]);
+    expect(cubeHistoryReducer(history, { type: 'redo' }).present).toEqual(expected);
+  });
+
   it('keeps mapped preview stickers synchronized after undo and redo', () => {
     const original = createEmptyCubeState();
     const edited = makeEditedCube();

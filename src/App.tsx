@@ -137,6 +137,7 @@ function App() {
         onUndo={cubeState.undo}
         onRedo={cubeState.redo}
         onApplyMove={cubeState.applyMove}
+        onApplyScramble={cubeState.applyScramble}
         onSave={cubeState.saveCurrentCube}
         onRestore={cubeState.restoreSavedCube}
         onClearSaved={cubeState.clearSavedCube}

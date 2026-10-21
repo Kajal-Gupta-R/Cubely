@@ -13,6 +13,7 @@ import {
 } from './cubeState';
 import type { CubeMove } from './cubeStateManager';
 import { isCubeSolved } from './cubePlayback';
+import PracticeMode from './PracticeMode';
 import type { CubeSolveResult } from './cubeSolver';
 import SolutionPlayback from './SolutionPlayback';
 import { validateCube, type ValidationResult } from './cubeValidation';
@@ -26,6 +27,7 @@ interface CubeEditorProps {
   onUndo: () => void;
   onRedo: () => void;
   onApplyMove: (move: CubeMove) => CubeState;
+  onApplyScramble: (moves: readonly CubeMove[]) => CubeState;
   onSave: () => void;
   onRestore: () => void;
   onClearSaved: () => void;
@@ -51,6 +53,7 @@ function CubeEditor({
   onUndo,
   onRedo,
   onApplyMove,
+  onApplyScramble,
   onSave,
   onRestore,
   onClearSaved,
@@ -66,6 +69,7 @@ function CubeEditor({
   const [validation, setValidation] = useState<ValidationResult | null>(null);
   const [message, setMessage] = useState('');
   const [confirmReset, setConfirmReset] = useState(false);
+  const [practiceRunning, setPracticeRunning] = useState(false);
   const [solveRequest, setSolveRequest] = useState<{
     id: number;
     cube: CubeState;
@@ -170,6 +174,17 @@ function CubeEditor({
 
   return (
     <section className="editor-section" id="editor" aria-labelledby="editor-title">
+      <PracticeMode
+        cube={cube}
+        onTimerRunningChange={setPracticeRunning}
+        onApplyScramble={(moves) => {
+          clearSolution();
+          const scrambledCube = onApplyScramble(moves);
+          setValidation(null);
+          setMessage('');
+          return scrambledCube;
+        }}
+      />
       <div className="editor-heading">
         <span className="section-kicker">START WITH YOUR CUBE</span>
         <h2 id="editor-title">Enter the colors, one face at a time.</h2>
@@ -214,8 +229,10 @@ function CubeEditor({
                   key={`${activeFace}-${index}`}
                   type="button"
                   aria-label={label}
-                  title={isCenter ? 'Face centers cannot be changed' : 'Set sticker color'}
-                  disabled={isCenter}
+                  title={isCenter
+                    ? 'Face centers cannot be changed'
+                    : practiceRunning ? 'Sticker editing is paused during a timed attempt' : 'Set sticker color'}
+                  disabled={isCenter || practiceRunning}
                   style={{ backgroundColor: color ? COLORS.find((item) => item.color === color)?.hex : '#111827' }}
                   onClick={() => updateSticker(index)}
                 >
@@ -238,6 +255,7 @@ function CubeEditor({
                 type="button"
                 aria-label={`${label} sticker color`}
                 aria-pressed={selectedColor === color}
+                disabled={practiceRunning}
                 onClick={() => {
                   setSelectedColor(color);
                   setMessage('');
@@ -252,6 +270,7 @@ function CubeEditor({
               type="button"
               aria-label="Eraser"
               aria-pressed={selectedColor === 'erase'}
+              disabled={practiceRunning}
               onClick={() => {
                 setSelectedColor('erase');
                 setMessage('Eraser selected. Choose a sticker to clear it.');
@@ -278,7 +297,7 @@ function CubeEditor({
           </div>
 
           <div className="editor-actions">
-            <button className="editor-button secondary" type="button" onClick={resetCurrentFace}>
+            <button className="editor-button secondary" type="button" disabled={practiceRunning} onClick={resetCurrentFace}>
               Reset {FACE_LABELS[activeFace]} face
             </button>
             <button className="editor-button primary" type="button" onClick={checkCube}>
@@ -287,7 +306,7 @@ function CubeEditor({
             <button
               className="editor-button primary"
               type="button"
-              disabled={solveResult !== null && 'solving' in solveResult}
+              disabled={practiceRunning || (solveResult !== null && 'solving' in solveResult)}
               onClick={() => void findSolution()}
             >
               {solveResult !== null && 'solving' in solveResult ? 'Solving…' : 'Find solution'}
@@ -318,6 +337,7 @@ function CubeEditor({
                       onApplyMove={onApplyMove}
                       onAnimateMove={onAnimateMove}
                       onCancelAnimation={onCancelAnimation}
+                      practiceLocked={practiceRunning}
                     />
                   )}
                   <span>Moves use standard face-turn notation.</span>
@@ -328,10 +348,10 @@ function CubeEditor({
             </div>
           )}
           <div className="history-controls" role="group" aria-label="Cube history">
-            <button className="editor-button secondary" type="button" disabled={!canUndo} onClick={undoEdit}>
+            <button className="editor-button secondary" type="button" disabled={practiceRunning || !canUndo} onClick={undoEdit}>
               Undo
             </button>
-            <button className="editor-button secondary" type="button" disabled={!canRedo} onClick={redoEdit}>
+            <button className="editor-button secondary" type="button" disabled={practiceRunning || !canRedo} onClick={redoEdit}>
               Redo
             </button>
           </div>
@@ -359,23 +379,23 @@ function CubeEditor({
             <button className="editor-button secondary" type="button" onClick={onSave}>
               Save now
             </button>
-            <button className="editor-button secondary" type="button" disabled={!saved} onClick={restoreCube}>
+            <button className="editor-button secondary" type="button" disabled={practiceRunning || !saved} onClick={restoreCube}>
               Restore saved
             </button>
-            <button className="text-button" type="button" disabled={!saved} onClick={onClearSaved}>
+            <button className="text-button" type="button" disabled={practiceRunning || !saved} onClick={onClearSaved}>
               Remove saved data
             </button>
           </div>
           {storageMessage && <p className="editor-message" role="status">{storageMessage}</p>}
           {!confirmReset ? (
-            <button className="text-button" type="button" onClick={() => setConfirmReset(true)}>
+            <button className="text-button" type="button" disabled={practiceRunning} onClick={() => setConfirmReset(true)}>
               Reset all faces…
             </button>
           ) : (
             <div className="reset-confirmation" role="group" aria-label="Confirm reset">
               <span>Clear every entered sticker?</span>
-              <button type="button" onClick={resetAllFaces}>Clear cube</button>
-              <button type="button" onClick={() => setConfirmReset(false)}>Cancel</button>
+              <button type="button" disabled={practiceRunning} onClick={resetAllFaces}>Clear cube</button>
+              <button type="button" disabled={practiceRunning} onClick={() => setConfirmReset(false)}>Cancel</button>
             </div>
           )}
 

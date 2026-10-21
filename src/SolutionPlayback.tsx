@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from 'react';
 import type { CubeState } from './cubeState';
 import type { CubeMove } from './cubeStateManager';
 import MoveLearning from './MoveLearning';
@@ -18,6 +18,7 @@ interface SolutionPlaybackProps {
   onApplyMove: (move: CubeMove) => CubeState;
   onAnimateMove: (move: CubeMove, durationMs: number) => Promise<void>;
   onCancelAnimation: () => void;
+  practiceLocked?: boolean;
 }
 
 function SolutionPlayback({
@@ -27,6 +28,7 @@ function SolutionPlayback({
   onApplyMove,
   onAnimateMove,
   onCancelAnimation,
+  practiceLocked = false,
 }: SolutionPlaybackProps) {
   const [playback, dispatch] = useReducer(playbackReducer, undefined, createPlaybackState);
   const [busy, setBusy] = useState(false);
@@ -36,14 +38,25 @@ function SolutionPlayback({
   const busyRef = useRef(false);
   const expectedCube = useRef(startCube);
   const playbackState = useRef(playback);
+  const practiceLockedRef = useRef(practiceLocked);
 
   useEffect(() => {
     playbackState.current = playback;
   }, [playback]);
 
+  useLayoutEffect(() => {
+    practiceLockedRef.current = practiceLocked;
+  }, [practiceLocked]);
+
   useEffect(() => () => {
     if (busyRef.current) onCancelAnimation();
   }, [onCancelAnimation]);
+
+  useEffect(() => {
+    if (!practiceLocked) return;
+    dispatch({ type: 'pause' });
+    if (busyRef.current) onCancelAnimation();
+  }, [onCancelAnimation, practiceLocked]);
 
   useEffect(() => {
     if (!busyRef.current && !interrupted && !areSameCube(cube, expectedCube.current)) {
@@ -58,12 +71,17 @@ function SolutionPlayback({
     cursor: number,
     automatic: boolean,
   ): Promise<void> => {
-    if (busyRef.current || interrupted) return;
+    if (busyRef.current || interrupted || practiceLockedRef.current) return;
     busyRef.current = true;
     setBusy(true);
     setMessage(null);
     try {
       await onAnimateMove(move, PLAYBACK_MOVE_DURATION_MS / playbackState.current.speed);
+      if (practiceLockedRef.current) {
+        dispatch({ type: 'pause' });
+        setMessage('Playback paused because a practice attempt started.');
+        return;
+      }
       const updatedCube = onApplyMove(move);
       expectedCube.current = updatedCube;
       const solved = isCubeSolved(updatedCube);
@@ -94,12 +112,17 @@ function SolutionPlayback({
     move: CubeMove,
     cursor: number,
   ): Promise<boolean> => {
-    if (busyRef.current || interrupted) return false;
+    if (busyRef.current || interrupted || practiceLockedRef.current) return false;
     busyRef.current = true;
     setBusy(true);
     setMessage(null);
     try {
       await onAnimateMove(move, PLAYBACK_MOVE_DURATION_MS / playbackState.current.speed);
+      if (practiceLockedRef.current) {
+        dispatch({ type: 'pause' });
+        setMessage('Playback paused because a practice attempt started.');
+        return false;
+      }
       expectedCube.current = onApplyMove(move);
       dispatch({ type: 'previous' });
     } catch (error) {
@@ -176,7 +199,7 @@ function SolutionPlayback({
         <button
           className="editor-button primary"
           type="button"
-          disabled={busy || interrupted || playback.status === 'playing' || playback.cursor >= moves.length}
+          disabled={practiceLocked || busy || interrupted || playback.status === 'playing' || playback.cursor >= moves.length}
           onClick={() => dispatch({ type: 'play', totalMoves: moves.length })}
         >
           Play
@@ -184,7 +207,7 @@ function SolutionPlayback({
         <button
           className="editor-button secondary"
           type="button"
-          disabled={playback.status !== 'playing'}
+          disabled={practiceLocked || playback.status !== 'playing'}
           onClick={() => dispatch({ type: 'pause' })}
         >
           Pause
@@ -192,7 +215,7 @@ function SolutionPlayback({
         <button
           className="editor-button secondary"
           type="button"
-          disabled={busy || interrupted || playback.cursor === 0}
+          disabled={practiceLocked || busy || interrupted || playback.cursor === 0}
           onClick={() => void stepBackward()}
         >
           Previous Move
@@ -200,7 +223,7 @@ function SolutionPlayback({
         <button
           className="editor-button secondary"
           type="button"
-          disabled={busy || interrupted || playback.cursor >= moves.length}
+          disabled={practiceLocked || busy || interrupted || playback.cursor >= moves.length}
           onClick={() => void stepForward()}
         >
           Next Move
@@ -208,7 +231,7 @@ function SolutionPlayback({
         <button
           className="editor-button secondary"
           type="button"
-          disabled={busy || interrupted || playback.cursor === 0}
+          disabled={practiceLocked || busy || interrupted || playback.cursor === 0}
           onClick={() => void restart()}
         >
           Restart
@@ -218,7 +241,7 @@ function SolutionPlayback({
           <select
             aria-label="Playback speed"
             value={playback.speed}
-            disabled={busy}
+            disabled={practiceLocked || busy}
             onChange={(event) => dispatch({
               type: 'set-speed',
               speed: Number(event.target.value) || DEFAULT_PLAYBACK_SPEED,
