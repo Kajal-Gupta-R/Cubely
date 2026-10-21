@@ -1,11 +1,12 @@
 
 import { useState } from 'react';
 import './App.css';
+import CubeEditor from './CubeEditor';
 
 const colors = [
-  '#f8fafc', '#f8fafc', '#f8fafc',
-  '#f8fafc', '#f8fafc', '#f8fafc',
-  '#f8fafc', '#f8fafc', '#f8fafc',
+  '#22c55e', '#22c55e', '#22c55e',
+  '#22c55e', '#22c55e', '#22c55e',
+  '#22c55e', '#22c55e', '#22c55e',
 ];
 
 function CubePreview() {
@@ -36,7 +37,7 @@ function CubePreview() {
         </div>
         <div className="face back">
           {Array.from({ length: 9 }, (_, i) => (
-            <div className="sticker" key={i} style={{ background: '#22c55e' }} />
+            <div className="sticker" key={i} style={{ background: '#3b82f6' }} />
           ))}
         </div>
         <div className="face right">
@@ -51,12 +52,12 @@ function CubePreview() {
         </div>
         <div className="face top">
           {Array.from({ length: 9 }, (_, i) => (
-            <div className="sticker" key={i} style={{ background: '#eab308' }} />
+            <div className="sticker" key={i} style={{ background: '#f8fafc' }} />
           ))}
         </div>
         <div className="face bottom">
           {Array.from({ length: 9 }, (_, i) => (
-            <div className="sticker" key={i} style={{ background: '#ffffff' }} />
+            <div className="sticker" key={i} style={{ background: '#facc15' }} />
           ))}
         </div>
       </div>
@@ -80,7 +81,7 @@ function App() {
           <a href="#how-it-works">How it works</a>
           <a href="#learn">Learn</a>
         </div>
-        <a className="nav-cta" href="#how-it-works">Start solving ↗</a>
+        <a className="nav-cta" href="#editor">Start solving ↗</a>
       </nav>
 
       <section className="hero" id="home">
@@ -95,12 +96,11 @@ function App() {
             brings you <span>closer.</span>
           </h1>
           <p className="hero-description">
-            Meet your new cube-solving companion. Explore your cube in 3D,
-            discover every move, and turn that scrambled puzzle into a
-            satisfying solution.
+            Meet your new cube-solving companion. Rotate the independent cube
+            preview, enter your stickers below, and build toward a satisfying solution.
           </p>
           <div className="hero-actions">
-            <a className="primary-button" href="#how-it-works">
+            <a className="primary-button" href="#editor">
               Solve my cube <span>↗</span>
             </a>
             <button
@@ -140,6 +140,8 @@ function App() {
         </div>
       </section>
 
+      <CubeEditor />
+
       <section className="features" id="features">
         <div className="section-heading">
           <span>THE CUBELY EXPERIENCE</span>
@@ -154,7 +156,7 @@ function App() {
           <article className="feature-card">
             <span className="feature-number">02 / BUILD</span>
             <h3>Enter your colors</h3>
-            <p>Next, we'll build a guided editor to enter and validate your cube.</p>
+            <p>Enter all six faces and check whether the arrangement is physically possible.</p>
           </article>
           <article className="feature-card">
             <span className="feature-number">03 / SOLVE</span>
@@ -166,8 +168,8 @@ function App() {
 
       <section className="how-section" id="how-it-works">
         <span className="section-kicker">YOUR JOURNEY STARTS HERE</span>
-        <h2>One puzzle. A whole new perspective.</h2>
-        <p>We're building your solving journey in stages, starting with 3D exploration.</p>
+        <h2>Begin with a clear picture of your cube.</h2>
+        <p>Enter the stickers, check the cube’s legality, then follow the next stages as they arrive.</p>
         <a className="primary-button" href="#learn">Explore the basics ↗</a>
       </section>
 
